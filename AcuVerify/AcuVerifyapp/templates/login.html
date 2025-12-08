@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+            margin-top: 5px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .back-link {
+            margin-top: 15px;
+        }
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    {% if step == 'email' %}
+        <h3>Welcome Back</h3>
+        <p>Please enter your email address to continue</p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+            <button type="submit">Continue</button>
+        </form>
+    
+    {% elif step == 'password' %}
+        <h3>Enter Password</h3>
+        <p>Email: <strong>{{ email }}</strong></p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="error">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <div class="back-link">
+            <a href="{% url 'login' %}?reset=true">← Back to email</a>
+        </div>
+    
+    {% elif step == 'create_password' %}
+        <h3>Create Your Password</h3>
+        <p>Email: <strong>{{ email }}</strong></p>
+        <p>User Type: <strong>{{ user_type|title }}</strong></p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                {% if form.password.help_text %}
+                    <div class="help-text">{{ form.password.help_text }}</div>
+                {% endif %}
+                {% if form.password.errors %}
+                    <div class="error">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.password_confirm.label_tag }}
+                {{ form.password_confirm }}
+                {% if form.password_confirm.errors %}
+                    <div class="error">{{ form.password_confirm.errors }}</div>
+                {% endif %}
+            </div>
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <button type="submit">Create Password & Login</button>
+        </form>
+        <div class="back-link">
+            <a href="{% url 'login' %}?reset=true">← Back to email</a>
+        </div>
+    {% endif %}
+</body>
+</html>
