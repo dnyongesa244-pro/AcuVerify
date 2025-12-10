@@ -1,62 +1,72 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>Staff Registration Form</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-
-    <p>
-      <label>Gender:</label>
-      <span style="display: inline-flex; gap: 1rem; align-items: center;">
-        {% for radio in form.gender %}
-          <label style="display: inline-flex; align-items: center; gap: 0.35rem; margin: 0;">
-            {{ radio.tag }} {{ radio.choice_label }}
-          </label>
-        {% endfor %}
-      </span>
-      {% if form.gender.help_text %}
-        <small>{{ form.gender.help_text }}</small>
-      {% endif %}
-      {% if form.gender.errors %}
-        <div class="text-danger">{{ form.gender.errors }}</div>
-      {% endif %}
-    </p>
-
-    {% for field in form %}
-      {% if field.name != "gender" and field.name != "subject_specialization" %}
-        <p>
-          {{ field.label_tag }}
-          {{ field }}
-          {% if field.help_text %}
-            <small>{{ field.help_text }}</small>
-          {% endif %}
-          {% if field.errors %}
-            <div class="text-danger">{{ field.errors }}</div>
-          {% endif %}
-        </p>
-      {% endif %}
-    {% endfor %}
-
-    <p>
-      <label>{{ form.subject_specialization.label }}:</label>
-      <div style="display: inline-flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-        {% for checkbox in form.subject_specialization %}
-          <label style="display: inline-flex; align-items: center; gap: 0.35rem; margin: 0;">
-            {{ checkbox.tag }} {{ checkbox.choice_label }}
-          </label>
-        {% empty %}
-          <span style="color: #999;">No subjects available.</span>
-        {% endfor %}
+  <div class="container my-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="mb-0">{% if editing %}Update Staff Details{% else %}Staff Registration Form{% endif %}</h2>
       </div>
-      {% if form.subject_specialization.help_text %}
-        <small>{{ form.subject_specialization.help_text }}</small>
-      {% endif %}
-      {% if form.subject_specialization.errors %}
-        <div class="text-danger">{{ form.subject_specialization.errors }}</div>
-      {% endif %}
-    </p>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
 
-    <button type="submit">Register</button>
-  </form>
+          <div class="mb-3">
+            <label class="form-label">Gender:</label>
+            <div class="d-flex gap-3 align-items-center">
+              {% for radio in form.gender %}
+                <label class="d-flex align-items-center gap-2 mb-0">
+                  {{ radio.tag }} {{ radio.choice_label }}
+                </label>
+              {% endfor %}
+            </div>
+            {% if form.gender.help_text %}
+              <div class="form-text">{{ form.gender.help_text }}</div>
+            {% endif %}
+            {% if form.gender.errors %}
+              <div class="text-danger mt-1">{{ form.gender.errors }}</div>
+            {% endif %}
+          </div>
+
+          {% for field in form %}
+            {% if field.name != "gender" and field.name != "subject_specialization" %}
+              <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                  <div class="text-danger mt-1">{{ field.errors }}</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+
+          <div class="mb-3">
+            <label class="form-label">{{ form.subject_specialization.label }}:</label>
+            <div class="d-flex flex-wrap gap-3">
+              {% for checkbox in form.subject_specialization %}
+                <label class="d-flex align-items-center gap-2 mb-0">
+                  {{ checkbox.tag }} {{ checkbox.choice_label }}
+                </label>
+              {% empty %}
+                <span class="text-muted">No subjects available.</span>
+              {% endfor %}
+            </div>
+            {% if form.subject_specialization.help_text %}
+              <div class="form-text">{{ form.subject_specialization.help_text }}</div>
+            {% endif %}
+            {% if form.subject_specialization.errors %}
+              <div class="text-danger mt-1">{{ form.subject_specialization.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="card-footer bg-transparent border-0 text-end px-0">
+            <button type="submit" class="btn {% if editing %}btn-success{% else %}btn-primary{% endif %}">{% if editing %}Update{% else %}Register{% endif %}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}

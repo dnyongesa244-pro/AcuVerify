@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  {# Assign Streams & Subjects to Teacher #}
+  {# Admin page to assign streams/classes and subjects to teachers #}
+  {# The form dynamically filters subjects based on the selected staff member's specializations #}
+  <h2>Assign Streams & Subjects to Teacher</h2>
+
+  {# Display success/error messages #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    {# Staff selection dropdown #}
+    <div class="mb-3">
+      {{ form.staff.label_tag }}
+      {{ form.staff }}
+      {% for err in form.staff.errors %}
+        <div class="text-danger small">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    {# Stream/Class selection dropdown #}
+    <div class="mb-3">
+      {{ form.stream.label_tag }}
+      {{ form.stream }}
+      {% for err in form.stream.errors %}
+        <div class="text-danger small">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    {# Subjects checkboxes - filtered to staff specializations and stream class #}
+    <div class="mb-3">
+      <label class="d-block">{{ form.subjects.label }}</label>
+      <div style="display: inline-flex; gap: 1rem; flex-wrap: wrap;">
+        {% for checkbox in form.subjects %}
+          <label style="display: inline-flex; align-items: center; gap: .35rem; margin: 0;">
+            {{ checkbox.tag }} {{ checkbox.choice_label }}
+          </label>
+        {% empty %}
+          <div class="text-muted">No matching subjects available. Select a staff and stream first.</div>
+        {% endfor %}
+      </div>
+      {% for err in form.subjects.errors %}
+        <div class="text-danger small">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    {# Submit button #}
+    <button type="submit" class="btn btn-primary">Assign</button>
+  </form>
+
+  {# Helpful note about subject filtering #}
+  <p class="mt-3"><small>Note: Subjects shown are the intersection of the teacher's specializations and the selected stream's class subjects.</small></p>
+</div>
+{% endblock %}

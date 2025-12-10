@@ -1,10 +1,36 @@
 from django.db import models
 from django.core.validators import EmailValidator, MinValueValidator, MaxValueValidator
 
-# Create your models here.
+"""
+=============================================================================
+AcuVerify Models
+=============================================================================
+This module defines the database models for the AcuVerify school management 
+system. Key entities include Staff, Students, Classes, Subjects, Exams, 
+Assignments, and Attendance tracking.
+
+Models are organized by domain:
+- Administration & Personnel (AdminHOD, Staff, Guardian)
+- Academic Structure (EducationLevel, Classes, Streams, Subject)
+- Academics (AcademicYear, Term, Exam, Assignment)
+- Student Records (Students, StudentGuardian, Attendance, LeaveReport)
+- Feedback & Communication (Notifications, Feedback)
+=============================================================================
+"""
 
 
 class AdminHOD(models.Model):
+    """
+    Administrator / Head of Department model.
+    Stores admin user credentials for school management.
+    
+    Fields:
+    - fname: First name
+    - lname: Last name
+    - email: Admin email (used for login)
+    - password: Encrypted password (should use Django's User model in production)
+    - created_at, updated_at: Audit timestamps
+    """
     id=models.AutoField(primary_key=True)
     fname=models.CharField(max_length=255)
     lname=models.CharField(max_length=255)
@@ -15,14 +41,34 @@ class AdminHOD(models.Model):
     objects = models.Manager()
 
 
-class  Staff(models.Model):
+class Staff(models.Model):
+    """
+    Teacher/Staff member model.
+    Stores information about all school staff members including teachers.
+    
+    Fields:
+    - fname, lname: First and last name
+    - email: Staff email (used for login)
+    - gender: M (Male) or F (Female)
+    - address: Residential address
+    - subject_specialization: ManyToMany field linking to subjects the staff specializes in
+    - position: Job title (e.g., "Teacher", "Coordinator")
+    - department: Department assignment (e.g., "Science", "Languages")
+    - phone_number: Contact phone
+    
+    Related tables:
+    - subject_assignments: StaffSubjectStream records (which subjects they teach to which streams)
+    - class_assignments: ClassTeacher records (class assignments)
+    - feedbacks: FeedbackStaff records
+    - exams_created: Exam records created by this staff
+    """
     id=models.AutoField(primary_key=True)
     fname=models.CharField(max_length=255)
     lname=models.CharField(max_length=255)
     email=models.EmailField(max_length=255, validators=[EmailValidator()])
     address=models.TextField()
     gender=models.CharField(max_length=10, blank=True, null=True)
-    # Allow linking to one or more Subject instances as specializations
+    # ManyToMany: allows a staff to specialize in multiple subjects
     subject_specialization=models.ManyToManyField('Subject', blank=True, related_name='specialist_staff')
     position=models.CharField(max_length=255)
     department=models.CharField(max_length=255)
@@ -34,8 +80,18 @@ class  Staff(models.Model):
     def __str__(self):
         return f"{self.fname} {self.lname}"
 
+
 class EducationLevel(models.Model):
-    """Represents education levels: Primary, Junior Secondary, Senior Secondary"""
+    """
+    Represents education levels in the school system.
+    Examples: "Primary", "Junior Secondary", "Senior Secondary"
+    
+    Fields:
+    - level_name: Display name (e.g., "Primary")
+    - level_code: Unique code (e.g., "PRIMARY", "JSS", "SSS")
+    
+    Used by: Classes model to categorize classes by level
+    """
     id=models.AutoField(primary_key=True)
     level_name=models.CharField(max_length=100)  # e.g., "Primary", "Junior Secondary", "Senior Secondary"
     level_code=models.CharField(max_length=50, unique=True)  # e.g., "PRIMARY", "JSS", "SSS"
@@ -45,9 +101,25 @@ class EducationLevel(models.Model):
     
     def __str__(self):
         return self.level_name
+    
+    class Meta:
+        verbose_name_plural = "Education Levels"
+
 
 class Classes(models.Model):
-    id=models.AutoField(primary_key=True)
+    """
+    Represents a class/grade level in the school.
+    Examples: "Form 1", "Grade 7", "Class 3"
+    
+    Fields:
+    - class_name: Name of the class
+    - education_level: ForeignKey to EducationLevel (categorizes the class)
+    
+    Related tables:
+    - streams: Stream records (e.g., Form 1 A, Form 1 B)
+    - subjects: Subject records taught in this class
+    - students: Student records enrolled in this class
+    """
     class_name=models.CharField(max_length=255)  # e.g., "Form 1", "Grade 7", "Class 3"
     education_level=models.ForeignKey(EducationLevel, on_delete=models.CASCADE, null=True, blank=True)
     created_at=models.DateTimeField(auto_now_add=True)
@@ -84,7 +156,7 @@ class Subject(models.Model):
     objects=models.Manager()
     
     def __str__(self):
-        return f"{self.subject_name} - {self.class_id.class_name}"
+        return self.subject_name
 
 
 class AcademicYear(models.Model):
