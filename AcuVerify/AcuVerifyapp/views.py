@@ -27,6 +27,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Staff, Students
 from .forms import StaffRegistrationForm, StudentRegistrationForm, EmailForm, PasswordForm, CreatePasswordForm, AssignStreamForm
 from .models import StaffSubjectStream, Subject, Streams, AcademicYear
+from .forms import StaffProfileForm
+from django.contrib.auth.decorators import login_required
 
 
 def home(request):
@@ -210,7 +212,7 @@ def register_staff(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Staff member registered successfully!')
-            return redirect('home')
+            return redirect('staff_list')
     else:
         form = StaffRegistrationForm()
     return render(request, 'staffregistrationform.html', {'form': form})
@@ -230,7 +232,7 @@ def register_student(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Student registered successfully!')
-            return redirect('home')
+            return redirect('student_list')
     else:
         form = StudentRegistrationForm()
     return render(request, 'studentregistration.html', {'form': form})
@@ -285,6 +287,34 @@ def edit_staff(request, pk):
     else:
         form = StaffRegistrationForm(instance=staff)
     return render(request, 'staffregistrationform.html', {'form': form, 'editing': True, 'staff_obj': staff})
+
+
+@login_required
+def edit_profile(request):
+    """Allow authenticated staff to upload or update their profile picture.
+
+    The staff instance is resolved by matching the logged-in user's email
+    to the Staff.email field. If no Staff record exists for the user the
+    view will show a message and redirect.
+    """
+    user = request.user
+    # Attempt to find a Staff record with matching email
+    try:
+        staff = Staff.objects.get(email__iexact=user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'No staff profile found for your account.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = StaffProfileForm(request.POST, request.FILES, instance=staff)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('edit_profile')
+    else:
+        form = StaffProfileForm(instance=staff)
+
+    return render(request, 'edit_profile.html', {'form': form, 'staff_obj': staff})
 
 
 @login_required
@@ -359,6 +389,57 @@ def assign_stream(request):
         form = AssignStreamForm()
 
     return render(request, 'assign_stream.html', {'form': form})
+
+
+@login_required
+def student_list(request):
+        """
+        List all registered students.
+        Requires authentication.
+        """
+        students = Students.objects.all().order_by('fname', 'lname')
+        return render(request, 'student_list.html', {'students': students})
+
+
+def edit_student(request, pk):
+    """
+    Edit an existing student's information.
+    
+    Args:
+        pk: Primary key of the student to edit
+    
+    GET: Shows the form pre-filled with current data
+    POST: Updates student information and redirects to student list
+    """
+    student = get_object_or_404(Students, pk=pk)
+    if request.method == 'POST':
+        form = StudentRegistrationForm(request.POST, instance=student)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Student updated successfully.')
+            return redirect('student_list')
+    else:
+        form = StudentRegistrationForm(instance=student)
+    return render(request, 'studentregistration.html', {'form': form, 'editing': True, 'student_obj': student})
+
+
+
+def delete_student(request, pk):
+    """
+    Delete a student (with confirmation).
+    
+    Args:
+        pk: Primary key of the student to delete
+    
+    GET: Shows confirmation page
+    POST: Deletes the student and redirects to student list
+    """
+    student = get_object_or_404(Students, pk=pk)
+    if request.method == 'POST':
+        student.delete()
+        messages.success(request, 'Student deleted successfully.')
+        return redirect('student_list')
+    return render(request, 'student_delete_confirm.html', {'student_obj': student})            
 
 
 

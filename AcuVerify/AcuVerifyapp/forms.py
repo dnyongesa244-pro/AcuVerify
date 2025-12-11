@@ -114,9 +114,14 @@ class StaffRegistrationForm(forms.ModelForm):
     
     class Meta:
         model = Staff
-        fields = ['fname', 'lname', 'email', 'gender', 'position', 'department', 'address', 'subject_specialization', 'phone_number']
+        fields = ['fname', 'lname', 'email', 'phone_number', 'date_of_birth', 'gender', 'position', 'department', 'address', 'subject_specialization']
         widgets = {
             'gender': forms.RadioSelect(attrs={"class": "form-check-input me-2"}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'position': forms.TextInput(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         
         labels = {
@@ -127,6 +132,7 @@ class StaffRegistrationForm(forms.ModelForm):
             'department': 'Department',
             'address': 'Residential Address',
             'phone_number': 'Phone Number',
+            'date_of_birth': 'Date of Birth',
         }
 
 
@@ -302,3 +308,53 @@ class AssignStreamForm(forms.Form):
         else:
             # Unbound form or missing selections — keep subjects empty to avoid showing irrelevant choices
             self.fields['subjects'].queryset = Subject.objects.none()
+
+
+class StaffProfileForm(forms.ModelForm):
+    """Simple form for staff to upload or update their profile picture."""
+    class Meta:
+        model = Staff
+        fields = ['profile_pic']
+        widgets = {
+            'profile_pic': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'profile_pic': 'Profile Picture',
+        }
+
+
+class AssignClassTeacherForm(forms.Form):
+    """
+    Form for assigning a class teacher to a class.
+    
+    Admin uses this form to:
+    1. Select a class
+    2. Select a staff member to be the class teacher for that class
+    """
+    class Meta:
+        model = Streams
+        fields = ['stream_id', 'staff_id', 'academic_year_id']
+
+
+
+
+# class ClassTeacher(models.Model):
+#     id=models.AutoField(primary_key=True)
+#     stre_id=models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='class_teachers', null=True, blank=True)
+#     stream_id=models.ForeignKey(Streams, on_delete=models.CASCADE, related_name='stream_teachers', null=True, blank=True)
+#     staff_id=models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='class_assignments')
+#     academic_year=models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='class_teachers', null=True, blank=True)
+#     created_at=models.DateTimeField(auto_now_add=True)
+#     updated_at=models.DateTimeField(auto_now=True)
+#     objects = models.Manager()
+    
+#     class Meta:
+#         unique_together = [['stream_id', 'academic_year']]  # One teacher per stream per academic year
+    
+#     def __str__(self):
+#         if self.stream_id:
+#             return f"{self.class_id.class_name} {self.stream_id.stream_name} - {self.staff_id.fname} {self.staff_id.lname}"
+#         elif self.class_id:
+#             return f"{self.class_id.class_name} - {self.staff_id.fname} {self.staff_id.lname}"
+#         return f"{self.staff_id.fname} {self.staff_id.lname}"
+

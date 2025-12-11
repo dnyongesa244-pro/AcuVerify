@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Registered Students{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Students</h2>
+    <a href="{% url 'register_student' %}" class="btn btn-primary">
+      <i class="fas fa-user-plus me-2"></i>Add Student
+    </a>
+  </div>
+
+  {% if students %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Department</th>
+          <th>Position</th>
+          <th>Subjects</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for staff in staff_members %}
+        <tr>
+          <td>{{ student.fname }} {{ student.lname }}</td>
+          <td>{{ student.email }}</td>
+          <td>{{ student.phone_number|default:"-" }}</td>
+          <td>{{ student.department }}</td>
+          <td>{{ student.position }}</td>
+          <td>
+            {% with subjects=student.subject_specialization.all %}
+              {% if subjects %}
+                {{ subjects|join:", " }}
+              {% else %}
+                <span class="text-muted">None</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'edit_student' student.id %}" class="btn btn-sm btn-outline-primary me-2">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <form action="{% url 'delete_student' student.id %}" method="post" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this staff member?');">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">No Student records found.</div>
+  {% endif %}
+</div>
+{% endblock %}

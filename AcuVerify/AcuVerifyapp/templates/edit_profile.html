@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+  <div class="container my-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="mb-0">Edit Profile</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+
+          <div class="mb-3">
+            {% if staff_obj.profile_pic %}
+              <img src="{{ staff_obj.profile_pic.url }}" alt="Profile" class="rounded-circle mb-3" width="120" height="120">
+            {% else %}
+              <div class="profile-picture mb-3" style="width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;">{{ staff_obj.fname|first|upper }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.profile_pic.label_tag }}
+            {{ form.profile_pic }}
+            {% if form.profile_pic.help_text %}
+              <div class="form-text">{{ form.profile_pic.help_text }}</div>
+            {% endif %}
+            {% if form.profile_pic.errors %}
+              <div class="text-danger mt-1">{{ form.profile_pic.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Update Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

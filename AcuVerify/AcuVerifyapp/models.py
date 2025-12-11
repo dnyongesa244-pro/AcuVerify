@@ -35,7 +35,10 @@ class AdminHOD(models.Model):
     fname=models.CharField(max_length=255)
     lname=models.CharField(max_length=255)
     email=models.EmailField(max_length=255, validators=[EmailValidator()])
-    password=models.CharField(max_length=255)  # Should use hashed passwords in production
+    # Allow null/blank so existing rows don't require a one-off default during migrations.
+    # Note: In production you should rely on Django's `User` model for authentication
+    # and store hashed passwords there. This field is kept for compatibility.
+    password=models.CharField(max_length=255, blank=True, null=True)  # Should use hashed passwords in production
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     objects = models.Manager()
@@ -46,15 +49,20 @@ class Staff(models.Model):
     Teacher/Staff member model.
     Stores information about all school staff members including teachers.
     
-    Fields:
+    Fields (matching Students model structure):
     - fname, lname: First and last name
     - email: Staff email (used for login)
+    - phone_number: Contact phone
+    - date_of_birth: Date of birth (blank/null)
     - gender: M (Male) or F (Female)
+    - profile_pic: Profile picture (ImageField, blank/null)
+    - password: Encrypted password
     - address: Residential address
+    
+    Staff-specific fields:
     - subject_specialization: ManyToMany field linking to subjects the staff specializes in
     - position: Job title (e.g., "Teacher", "Coordinator")
     - department: Department assignment (e.g., "Science", "Languages")
-    - phone_number: Contact phone
     
     Related tables:
     - subject_assignments: StaffSubjectStream records (which subjects they teach to which streams)
@@ -62,17 +70,24 @@ class Staff(models.Model):
     - feedbacks: FeedbackStaff records
     - exams_created: Exam records created by this staff
     """
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+    ]
+    
     id=models.AutoField(primary_key=True)
     fname=models.CharField(max_length=255)
     lname=models.CharField(max_length=255)
     email=models.EmailField(max_length=255, validators=[EmailValidator()])
+    phone_number=models.CharField(max_length=20, blank=True, null=True)
+    date_of_birth=models.DateField(null=True, blank=True)
+    gender=models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    profile_pic=models.ImageField(upload_to='staff_profiles/', blank=True, null=True)
     address=models.TextField()
-    gender=models.CharField(max_length=10, blank=True, null=True)
     # ManyToMany: allows a staff to specialize in multiple subjects
     subject_specialization=models.ManyToManyField('Subject', blank=True, related_name='specialist_staff')
     position=models.CharField(max_length=255)
     department=models.CharField(max_length=255)
-    phone_number=models.CharField(max_length=20, blank=True, null=True)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     objects = models.Manager()
@@ -267,7 +282,7 @@ class Students(models.Model):
     date_of_birth=models.DateField(null=True, blank=True)
     gender=models.CharField(max_length=1, choices=GENDER_CHOICES)
     profile_pic=models.ImageField(upload_to='student_profiles/', blank=True, null=True)  # Use ImageField for file uploads
-    password=models.CharField(max_length=255)  # Should use hashed passwords in production
+    # password=models.CharField(max_length=255)  # Should use hashed passwords in production
     class_id=models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='students')
     stream_id=models.ForeignKey(Streams, on_delete=models.CASCADE, related_name='students')
     address=models.TextField()
@@ -426,7 +441,7 @@ class NotificationGuardian(models.Model):
 # Additional model for class teacher assignment (important in Kenyan schools)
 class ClassTeacher(models.Model):
     id=models.AutoField(primary_key=True)
-    class_id=models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='class_teachers', null=True, blank=True)
+    stre_id=models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='class_teachers', null=True, blank=True)
     stream_id=models.ForeignKey(Streams, on_delete=models.CASCADE, related_name='stream_teachers', null=True, blank=True)
     staff_id=models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='class_assignments')
     academic_year=models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='class_teachers', null=True, blank=True)
@@ -655,3 +670,5 @@ class StudentAssignmentSubmission(models.Model):
             else:
                 self.status = 'SUBMITTED'
         super().save(*args, **kwargs)
+
+

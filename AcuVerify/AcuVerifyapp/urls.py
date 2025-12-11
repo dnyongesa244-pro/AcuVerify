@@ -38,4 +38,12 @@ urlpatterns = [
     path('staff/', views.staff_list, name='staff_list'),
     path('staff/<int:pk>/edit/', views.edit_staff, name='edit_staff'),
     path('staff/<int:pk>/delete/', views.delete_staff, name='delete_staff'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('assign_stream_teacher/', views.assign_stream, name='assign_stream'),
+
+
+    #student management (CRUD)    path('students/', views.student_list, name='student_list'),
+    path('students/', views.student_list, name='student_list'),
+    path('students/<int:pk>/edit/', views.edit_student, name='edit_student'),
+    path('students/<int:pk>/delete/', views.delete_student, name='delete_student'),
 ]
