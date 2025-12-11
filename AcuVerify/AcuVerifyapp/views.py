@@ -24,6 +24,7 @@ from django.contrib.auth import login as auth_login, logout as auth_logout, auth
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from .models import Staff, Students
 from .forms import StaffRegistrationForm, StudentRegistrationForm, EmailForm, PasswordForm, CreatePasswordForm, AssignStreamForm
 from .models import StaffSubjectStream, Subject, Streams, AcademicYear
@@ -226,12 +227,16 @@ def register_student(request):
     POST: Saves new student with class and stream assignment
     
     Students must be assigned to a specific class and stream during registration.
+    Admission number is auto-generated in sequence: std1, std2, std3, etc.
     """
     if request.method == 'POST':
         form = StudentRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Student registered successfully!')
+            student = form.save(commit=False)
+            # Auto-generate admission number
+            student.admission_number = Students.generate_admission_number()
+            student.save()
+            messages.success(request, f'Student registered successfully! Admission Number: {student.admission_number}')
             return redirect('student_list')
     else:
         form = StudentRegistrationForm()
@@ -359,7 +364,19 @@ def assign_stream(request):
     
     Requires authentication (login_required decorator).
     """
+    currently_assigned_subjects = []
+    
+    # Check if any academic year exists
+    has_academic_year = AcademicYear.objects.exists()
+    if not has_academic_year:
+        messages.warning(request, 'No academic years found. Please create an academic year first before assigning teachers to streams.')
+    
     if request.method == 'POST':
+        # Prevent assignment if no academic year exists
+        if not has_academic_year:
+            messages.error(request, 'Cannot assign streams without an academic year. Please create one in Manage Academic Years.')
+            return redirect('manage_academic_year')
+        
         form = AssignStreamForm(request.POST)
         if form.is_valid():
             staff = form.cleaned_data['staff']
@@ -387,9 +404,32 @@ def assign_stream(request):
             return redirect('assign_stream')
     else:
         form = AssignStreamForm()
+    
+    # If a staff and stream are selected (GET with params or after form submission attempt),
+    # fetch the subjects already assigned to that teacher for that stream
+    staff_id = request.GET.get('staff') or request.POST.get('staff')
+    stream_id = request.GET.get('stream') or request.POST.get('stream')
+    
+    if staff_id and stream_id and has_academic_year:
+        try:
+            year = AcademicYear.objects.filter(is_current=True).first()
+            if not year:
+                year = AcademicYear.objects.order_by('-start_date').first()
+            
+            # Get subjects already assigned to this teacher for this stream in the current year
+            currently_assigned_subjects = StaffSubjectStream.objects.filter(
+                staff_id=staff_id,
+                stream_id=stream_id,
+                academic_year=year
+            ).values_list('subject_id', flat=True)
+        except (ValueError, TypeError):
+            currently_assigned_subjects = []
 
-    return render(request, 'assign_stream.html', {'form': form})
-
+    return render(request, 'assign_stream.html', {
+        'form': form,
+        'currently_assigned_subjects': list(currently_assigned_subjects),
+        'has_academic_year': has_academic_year
+    })
 
 @login_required
 def student_list(request):
@@ -441,6 +481,57 @@ def delete_student(request, pk):
         return redirect('student_list')
     return render(request, 'student_delete_confirm.html', {'student_obj': student})            
 
+from django.http import JsonResponse
+
+@login_required
+def get_teacher_subjects(request):
+    staff_id = request.GET.get('staff_id')
+    stream_id = request.GET.get('stream_id')
+    subjects = []
+
+    if staff_id and stream_id:
+        try:
+            staff = Staff.objects.get(id=staff_id)
+            stream = Streams.objects.get(id=stream_id)
+            # Only subjects that match staff specialization and stream's class
+            qs = Subject.objects.filter(
+                id__in=staff.subject_specialization.values_list('id', flat=True),
+                class_id=stream.class_id
+            ).order_by('subject_name')
+            subjects = [{'id': s.id, 'name': s.subject_name} for s in qs]
+        except (Staff.DoesNotExist, Streams.DoesNotExist):
+            pass
+
+    return JsonResponse({'subjects': subjects})
 
 
-
+@login_required
+def manage_academic_year(request):
+    """
+    Manage academic years: create new years and view existing ones.
+    Only allows users to add academic years, not delete them (for data integrity).
+    """
+    from .forms import AcademicYearForm
+    
+    if request.method == 'POST':
+        form = AcademicYearForm(request.POST)
+        if form.is_valid():
+            academic_year = form.save()
+            messages.success(request, f"Academic year '{academic_year.year_name}' created successfully!")
+            return redirect('manage_academic_year')
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = AcademicYearForm()
+    
+    # Get all academic years, ordered by start_date descending (newest first)
+    academic_years = AcademicYear.objects.all().order_by('-start_date')
+    current_year = AcademicYear.objects.filter(is_current=True).first()
+    
+    context = {
+        'form': form,
+        'academic_years': academic_years,
+        'current_year': current_year,
+    }
+    
+    return render(request, 'academic_year.html', context)

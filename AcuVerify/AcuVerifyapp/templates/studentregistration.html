@@ -1,10 +1,143 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>Student Registration Form</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Register</button>
-  </form>
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Student Registration</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- First Name -->
+                        <div class="mb-3">
+                            <label for="{{ form.fname.id_for_label }}" class="form-label">First Name</label>
+                            {{ form.fname }}
+                            {% if form.fname.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.fname.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="mb-3">
+                            <label for="{{ form.lname.id_for_label }}" class="form-label">Last Name</label>
+                            {{ form.lname }}
+                            {% if form.lname.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.lname.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="mb-3">
+                            <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.phone_number.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Date of Birth -->
+                        <div class="mb-3">
+                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                            {{ form.date_of_birth }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.date_of_birth.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="mb-3">
+                            <label class="form-label d-block">Gender</label>
+                            <div class="form-check">
+                                {% for radio in form.gender %}
+                                    <div class="form-check">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                            {{ radio.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.gender.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Residential Address -->
+                        <div class="mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">Residential Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.address.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Class Enrolled -->
+                        <div class="mb-3">
+                            <label for="{{ form.class_id.id_for_label }}" class="form-label">Class Enrolled</label>
+                            {{ form.class_id }}
+                            {% if form.class_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.class_id.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Stream Enrolled -->
+                        <div class="mb-3">
+                            <label for="{{ form.stream_id.id_for_label }}" class="form-label">Stream Enrolled</label>
+                            {{ form.stream_id }}
+                            {% if form.stream_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.stream_id.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Register Student</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-check-label {
+        margin-left: 0.25rem;
+    }
+</style>
 {% endblock %}

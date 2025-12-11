@@ -274,7 +274,7 @@ class Students(models.Model):
     ]
     
     id=models.AutoField(primary_key=True)
-    admission_number=models.CharField(max_length=50, unique=True)  # Unique admission number (standard in Kenyan schools)
+    admission_number=models.CharField(max_length=50, unique=True, blank=True)  # Auto-generated during registration
     fname=models.CharField(max_length=255)
     lname=models.CharField(max_length=255)
     email=models.EmailField(max_length=255, validators=[EmailValidator()], blank=True, null=True)
@@ -296,6 +296,24 @@ class Students(models.Model):
     
     class Meta:
         verbose_name_plural = "Students"
+    
+    @staticmethod
+    def generate_admission_number():
+        """
+        Generate the next admission number in sequence: std1, std2, std3, etc.
+        """
+        last_student = Students.objects.all().order_by('-id').first()
+        if last_student:
+            # Extract the number from the last admission number (e.g., "std5" -> 5)
+            try:
+                last_number = int(last_student.admission_number.replace('std', ''))
+                next_number = last_number + 1
+            except (ValueError, AttributeError):
+                # If parsing fails, count all students
+                next_number = Students.objects.count() + 1
+        else:
+            next_number = 1
+        return f"std{next_number}"
 
 
 class StudentGuardian(models.Model):

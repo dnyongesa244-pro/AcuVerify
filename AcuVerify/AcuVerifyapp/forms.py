@@ -11,7 +11,7 @@ login/authentication, and class management.
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from django.contrib.auth.models import User
-from .models import Staff, Subject, Classes, Students, Streams
+from .models import Staff, Subject, Classes, Students, Streams, AcademicYear
 
 
 class StaffRegistrationForm(forms.ModelForm):
@@ -140,20 +140,35 @@ class StudentRegistrationForm(forms.ModelForm):
     """
     Form for registering a new student.
     
-    Fields: First/last name, email, address, phone, class, and stream enrollment.
+    Fields: First/last name, email, address, phone, gender, date of birth, class, and stream enrollment.
     The student must be assigned to a class and stream during registration.
+    Admission number is auto-generated during registration.
     """
-    model = Students
-    fields = ['fname', 'lname', 'email', 'address', 'phone_number', 'class_id','stream_id']
-    labels = {
-        'fname': 'First Name',
-        'lname': 'Last Name',
-        'email': 'Email Address',
-        'address': 'Residential Address',
-        'phone_number': 'Phone Number',
-        'class_id': 'Class Enrolled',
-        'stream_id': 'Stream Enrolled'
-    }      
+    class Meta:
+        model = Students
+        fields = ['fname', 'lname', 'email', 'phone_number', 'date_of_birth', 'gender', 'address', 'class_id', 'stream_id']
+        labels = {
+            'fname': 'First Name',
+            'lname': 'Last Name',
+            'email': 'Email Address',
+            'phone_number': 'Phone Number',
+            'date_of_birth': 'Date of Birth',
+            'gender': 'Gender',
+            'address': 'Residential Address',
+            'class_id': 'Class Enrolled',
+            'stream_id': 'Stream Enrolled'
+        }
+        widgets = {
+            'fname': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'lname': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'gender': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Residential Address'}),
+            'class_id': forms.Select(attrs={'class': 'form-control'}),
+            'stream_id': forms.Select(attrs={'class': 'form-control'}),
+        }      
 
 
 class ClassForm(forms.ModelForm):
@@ -269,13 +284,22 @@ class AssignStreamForm(forms.Form):
         This ensures we only show relevant subjects for assignment.
         """
         super().__init__(*args, **kwargs)
-        data = None
-        if args:
-            # bound form — args[0] is the data dict (POST data)
-            data = args[0]
+        data = args[0] if args else None
+
+        # If no POST data but form has initial (GET) values, use them
+        staff_id = None
+        stream_id = None
+
+        if data:
+            staff_id = data.get('staff')
+            stream_id = data.get('stream')
+        else:
+            # Use initial GET data
+            staff_id = self.initial.get('staff')
+            stream_id = self.initial.get('stream')
 
         # Pre-populate staff and stream querysets with ordering
-        staff_qs = Staff.objects.all().order_by('fname', 'lname')
+        staff_qs = Staff.objects.all().order_by('fname', 'lname').prefetch_related('subject_specialization')
         self.fields['staff'].queryset = staff_qs
 
         stream_qs = Streams.objects.select_related('class_id').all().order_by('class_id__class_name', 'stream_name')
@@ -284,11 +308,12 @@ class AssignStreamForm(forms.Form):
         # If the form is bound and staff+stream were provided, limit subjects to the intersection
         # between the staff's specializations and the subjects for the selected stream's class.
         try:
-            staff_id = int(data.get('staff')) if data and data.get('staff') else None
+            staff_id = int(staff_id) if staff_id else None
         except (ValueError, TypeError):
             staff_id = None
+
         try:
-            stream_id = int(data.get('stream')) if data and data.get('stream') else None
+            stream_id = int(stream_id) if stream_id else None
         except (ValueError, TypeError):
             stream_id = None
 
@@ -320,6 +345,25 @@ class StaffProfileForm(forms.ModelForm):
         }
         labels = {
             'profile_pic': 'Profile Picture',
+        }
+
+
+class AcademicYearForm(forms.ModelForm):
+    """Form for creating and managing academic years."""
+    class Meta:
+        model = AcademicYear
+        fields = ['year_name', 'start_date', 'end_date', 'is_current']
+        widgets = {
+            'year_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 2024/2025'}),
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'is_current': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'year_name': 'Academic Year',
+            'start_date': 'Start Date',
+            'end_date': 'End Date',
+            'is_current': 'Mark as Current Academic Year',
         }
 
 

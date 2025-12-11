@@ -30,6 +30,7 @@ urlpatterns = [
     
     # Academic administration
     path('accademic/', views.accademic_view, name='accademic'),
+    path('academic-year/', views.manage_academic_year, name='manage_academic_year'),
     
     # Stream/Subject assignment (admin-only in view)
     path('assign-stream/', views.assign_stream, name='assign_stream'),
@@ -46,4 +47,8 @@ urlpatterns = [
     path('students/', views.student_list, name='student_list'),
     path('students/<int:pk>/edit/', views.edit_student, name='edit_student'),
     path('students/<int:pk>/delete/', views.delete_student, name='delete_student'),
+
+
+    path('ajax/get-teacher-subjects/', views.get_teacher_subjects, name='get_teacher_subjects'),
+
 ]

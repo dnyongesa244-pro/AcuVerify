@@ -10,12 +10,21 @@
 
   {# Display success/error messages #}
   {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
   {% endif %}
 
-  <form method="post">
+  {% if not has_academic_year %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>⚠️ No Academic Year Found</strong><br>
+    You must create at least one academic year before assigning teachers to streams. 
+    <a href="{% url 'manage_academic_year' %}" class="alert-link">Create an Academic Year</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
+
+  <form method="post" {% if not has_academic_year %}disabled{% endif %}>
     {% csrf_token %}
 
     {# Staff selection dropdown #}
@@ -23,7 +32,7 @@
       {{ form.staff.label_tag }}
       {{ form.staff }}
       {% for err in form.staff.errors %}
-        <div class="text-danger small">{{ err }}</div>
+      <div class="text-danger small">{{ err }}</div>
       {% endfor %}
     </div>
 
@@ -32,32 +41,74 @@
       {{ form.stream.label_tag }}
       {{ form.stream }}
       {% for err in form.stream.errors %}
-        <div class="text-danger small">{{ err }}</div>
+      <div class="text-danger small">{{ err }}</div>
       {% endfor %}
     </div>
 
     {# Subjects checkboxes - filtered to staff specializations and stream class #}
     <div class="mb-3">
       <label class="d-block">{{ form.subjects.label }}</label>
-      <div style="display: inline-flex; gap: 1rem; flex-wrap: wrap;">
+      <div id="subjects-container" style="display: inline-flex; gap: 1rem; flex-wrap: wrap;">
         {% for checkbox in form.subjects %}
-          <label style="display: inline-flex; align-items: center; gap: .35rem; margin: 0;">
-            {{ checkbox.tag }} {{ checkbox.choice_label }}
-          </label>
+        <label style="display: inline-flex; align-items: center; gap: .35rem; margin: 0;">
+          {{ checkbox.tag }} {{ checkbox.choice_label }}
+        </label>
         {% empty %}
-          <div class="text-muted">No matching subjects available. Select a staff and stream first.</div>
+        <div class="text-muted">No matching subjects available. Select a staff and stream first.</div>
         {% endfor %}
       </div>
-      {% for err in form.subjects.errors %}
-        <div class="text-danger small">{{ err }}</div>
-      {% endfor %}
     </div>
 
+
     {# Submit button #}
-    <button type="submit" class="btn btn-primary">Assign</button>
+    <button type="submit" class="btn btn-primary" {% if not has_academic_year %}disabled{% endif %}>Assign</button>
   </form>
 
   {# Helpful note about subject filtering #}
-  <p class="mt-3"><small>Note: Subjects shown are the intersection of the teacher's specializations and the selected stream's class subjects.</small></p>
+  <p class="mt-3"><small>Note: Subjects shown are the intersection of the teacher's specializations and the selected
+      stream's class subjects.</small></p>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const staffSelect = document.getElementById('id_staff');  // Django default id: id_<field_name>
+    const streamSelect = document.getElementById('id_stream');
+    const subjectsContainer = document.getElementById('subjects-container');
+
+    function loadSubjects() {
+        const staff_id = staffSelect.value;
+        const stream_id = streamSelect.value;
+
+        if (!staff_id || !stream_id) {
+            subjectsContainer.innerHTML = '<div class="text-muted">Select staff and stream first.</div>';
+            return;
+        }
+
+        fetch(`/ajax/get-teacher-subjects/?staff_id=${staff_id}&stream_id=${stream_id}`)
+            .then(response => response.json())
+            .then(data => {
+                subjectsContainer.innerHTML = '';
+                if (data.subjects.length === 0) {
+                    subjectsContainer.innerHTML = '<div class="text-muted">No subjects available for this selection.</div>';
+                    return;
+                }
+
+                data.subjects.forEach(sub => {
+                    const label = document.createElement('label');
+                    label.style.marginRight = '1rem';
+                    label.innerHTML = `<input type="checkbox" name="subjects" value="${sub.id}" class="form-check-input me-2" checked> ${sub.name}`;
+                    subjectsContainer.appendChild(label);
+                });
+            });
+    }
+
+    staffSelect.addEventListener('change', loadSubjects);
+    streamSelect.addEventListener('change', loadSubjects);
+
+    // Load subjects on page load if staff & stream pre-selected
+    if (staffSelect.value && streamSelect.value) {
+        loadSubjects();
+    }
+});
+</script>
+
 {% endblock %}
