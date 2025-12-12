@@ -1,0 +1,11 @@
+# Ignore uploaded media files
+/media/
+/AcuVerifyapp/media/
+
+# Python/Django defaults
+*.py[cod]
+__pycache__/
+*.sqlite3
+
+# Virtualenv
+/myenv/
