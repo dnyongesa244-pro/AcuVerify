@@ -163,9 +163,11 @@ class Streams(models.Model):
 class Subject(models.Model):
     id=models.AutoField(primary_key=True)
     subject_name=models.CharField(max_length=255)
-    class_id=models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='subjects')
-    # Subjects are typically tied to class level, not individual streams
-    # All streams in a class usually study the same subjects
+    # A subject can belong to one or more classes (e.g., Mathematics taught in many grades)
+    classes=models.ManyToManyField(Classes, related_name='subjects', blank=True)
+    # Subjects are typically tied to class level exposures, but now a subject
+    # may be linked to multiple classes so the same subject (by name) can
+    # be taught across different class levels.
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     objects=models.Manager()

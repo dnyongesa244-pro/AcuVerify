@@ -51,4 +51,15 @@ urlpatterns = [
 
     path('ajax/get-teacher-subjects/', views.get_teacher_subjects, name='get_teacher_subjects'),
 
+    # Assignment management (teacher, student, parent views)
+    path('assignments/teacher/', views.teacher_assignments, name='teacher_assignments'),
+    path('assignments/create/', views.create_assignment, name='create_assignment'),
+    path('assignments/teacher/<int:pk>/', views.teacher_assignment_detail, name='teacher_assignment_detail'),
+    path('assignments/grade/<int:submission_pk>/', views.grade_submission, name='grade_submission'),
+    
+    path('assignments/student/', views.student_assignments, name='student_assignments'),
+    path('assignments/student/<int:pk>/', views.student_assignment_detail, name='student_assignment_detail'),
+    
+    path('assignments/parent/', views.parent_assignments, name='parent_assignments'),
+
 ]

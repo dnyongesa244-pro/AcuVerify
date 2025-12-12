@@ -25,11 +25,50 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils import timezone
 from .models import Staff, Students
 from .forms import StaffRegistrationForm, StudentRegistrationForm, EmailForm, PasswordForm, CreatePasswordForm, AssignStreamForm
-from .models import StaffSubjectStream, Subject, Streams, AcademicYear
-from .forms import StaffProfileForm
-from django.contrib.auth.decorators import login_required
+from .models import StaffSubjectStream, Subject, Streams, AcademicYear, Assignment, StudentAssignmentSubmission
+from .forms import StaffProfileForm, AssignmentForm, StudentAssignmentSubmissionForm, AssignmentGradingForm
+
+
+# ============================================================================
+# PERMISSION CHECKING HELPERS
+# ============================================================================
+
+def get_staff_or_none(user):
+    """Get Staff object for logged-in user or return None"""
+    try:
+        return Staff.objects.get(email=user.email)
+    except Staff.DoesNotExist:
+        return None
+
+
+def get_student_or_none(user):
+    """Get Students object for logged-in user or return None"""
+    try:
+        return Students.objects.get(email=user.email)
+    except Students.DoesNotExist:
+        return None
+
+
+def is_teacher(user):
+    """Check if user is a staff/teacher"""
+    return get_staff_or_none(user) is not None
+
+
+def is_student(user):
+    """Check if user is a student"""
+    return get_student_or_none(user) is not None
+
+
+def teacher_can_teach(staff, subject_id, stream_id):
+    """Check if a teacher teaches the given subject in the given stream"""
+    return StaffSubjectStream.objects.filter(
+        staff_id=staff,
+        subject_id=subject_id,
+        stream_id=stream_id
+    ).exists()
 
 
 def home(request):
@@ -484,7 +523,17 @@ def delete_student(request, pk):
 from django.http import JsonResponse
 
 @login_required
+@login_required
 def get_teacher_subjects(request):
+    """
+    AJAX endpoint to fetch subjects for a teacher in a specific stream.
+    
+    Returns subjects that:
+    1. Belong to the selected stream's class
+    2. Match the teacher's specializations (by subject name)
+    
+    This allows teachers to teach the same subjects across different classes.
+    """
     staff_id = request.GET.get('staff_id')
     stream_id = request.GET.get('stream_id')
     subjects = []
@@ -492,12 +541,17 @@ def get_teacher_subjects(request):
     if staff_id and stream_id:
         try:
             staff = Staff.objects.get(id=staff_id)
-            stream = Streams.objects.get(id=stream_id)
-            # Only subjects that match staff specialization and stream's class
+            stream = Streams.objects.select_related('class_id').get(id=stream_id)
+            
+            # Get the teacher's specialization subject names
+            teacher_subjects = staff.subject_specialization.values_list('subject_name', flat=True)
+            
+            # Get subjects for this stream's class that match teacher's specializations
             qs = Subject.objects.filter(
-                id__in=staff.subject_specialization.values_list('id', flat=True),
-                class_id=stream.class_id
+                classes=stream.class_id,
+                subject_name__in=teacher_subjects
             ).order_by('subject_name')
+            
             subjects = [{'id': s.id, 'name': s.subject_name} for s in qs]
         except (Staff.DoesNotExist, Streams.DoesNotExist):
             pass
@@ -535,3 +589,239 @@ def manage_academic_year(request):
     }
     
     return render(request, 'academic_year.html', context)
+
+
+# ============================================================================
+# ASSIGNMENT MANAGEMENT VIEWS
+# ============================================================================
+
+@login_required
+def teacher_assignments(request):
+    """
+    Teacher view to see assignments they have posted.
+    Only shows assignments created by the logged-in teacher.
+    """
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+    
+    # Get all assignments created by this teacher, ordered by due_date
+    assignments = Assignment.objects.filter(created_by=staff).order_by('-due_date', '-created_at')
+    
+    context = {
+        'assignments': assignments,
+        'is_teacher': True,
+    }
+    return render(request, 'assignments/teacher_list.html', context)
+
+
+@login_required
+def create_assignment(request):
+    """
+    Teacher view to create and post a new assignment.
+    
+    GET: Show assignment form
+    POST: Save assignment (teacher can only assign to streams/subjects they teach)
+    """
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, request.FILES)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            # Verify teacher teaches this subject/stream combination
+            if not teacher_can_teach(staff, assignment.subject_id.id, assignment.stream_id.id):
+                messages.error(request, 'You do not have permission to create assignments for this subject/stream combination.')
+                return redirect('teacher_assignments')
+            assignment.created_by = staff
+            assignment.save()
+            messages.success(request, f'Assignment "{assignment.title}" posted successfully!')
+            return redirect('teacher_assignments')
+    else:
+        form = AssignmentForm()
+        # Filter to only streams the teacher teaches
+        teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
+        form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams)
+        
+        # Filter to only subjects the teacher teaches
+        teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
+        form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects)
+    
+    context = {
+        'form': form,
+        'title': 'Create Assignment',
+    }
+    return render(request, 'assignments/assignment_form.html', context)
+
+
+@login_required
+def teacher_assignment_detail(request, pk):
+    """
+    Teacher view to see assignment details, submissions, and grade students.
+    """
+    assignment = get_object_or_404(Assignment, pk=pk)
+    
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+    
+    # Only the teacher who created the assignment can view this
+    if assignment.created_by != staff:
+        messages.error(request, 'You do not have permission to view this assignment.')
+        return redirect('teacher_assignments')
+    
+    # Get all submissions for this assignment
+    submissions = StudentAssignmentSubmission.objects.filter(assignment_id=assignment.id).select_related('student_id')
+    
+    context = {
+        'assignment': assignment,
+        'submissions': submissions,
+        'is_teacher': True,
+    }
+    return render(request, 'assignments/teacher_assignment_detail.html', context)
+
+
+@login_required
+def grade_submission(request, submission_pk):
+    """
+    Teacher view to grade a student submission.
+    """
+    submission = get_object_or_404(StudentAssignmentSubmission.objects.select_related('assignment_id', 'student_id'), pk=submission_pk)
+    
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+    
+    # Only the teacher who created the assignment can grade
+    if submission.assignment_id.created_by != staff:
+        messages.error(request, 'You do not have permission to grade this submission.')
+        return redirect('teacher_assignments')
+    
+    if request.method == 'POST':
+        form = AssignmentGradingForm(request.POST, instance=submission)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.status = 'GRADED'
+            submission.graded_by = staff
+            submission.graded_at = timezone.now()
+            submission.save()
+            messages.success(request, f'Submission graded for {submission.student_id.fname} {submission.student_id.lname}.')
+            return redirect('teacher_assignment_detail', pk=submission.assignment_id.id)
+    else:
+        form = AssignmentGradingForm(instance=submission)
+    
+    context = {
+        'form': form,
+        'submission': submission,
+        'assignment': submission.assignment_id,
+        'is_teacher': True,
+    }
+    return render(request, 'assignments/grade_submission.html', context)
+
+
+@login_required
+def student_assignments(request):
+    """
+    Student view to see assignments for their stream/class.
+    """
+    try:
+        student = Students.objects.get(email=request.user.email)
+    except Students.DoesNotExist:
+        messages.error(request, 'You are not registered as a student.')
+        return redirect('home')
+    
+    # Get assignments for the student's stream
+    assignments = Assignment.objects.filter(stream_id=student.stream_id).order_by('-due_date', '-created_at')
+    
+    # Get submissions for this student
+    submissions = StudentAssignmentSubmission.objects.filter(student_id=student).values_list('assignment_id', flat=True)
+    
+    context = {
+        'assignments': assignments,
+        'submissions': list(submissions),
+        'is_student': True,
+    }
+    return render(request, 'assignments/student_list.html', context)
+
+
+@login_required
+def student_assignment_detail(request, pk):
+    """
+    Student view to see assignment details and submit work.
+    """
+    assignment = get_object_or_404(Assignment, pk=pk)
+    
+    try:
+        student = Students.objects.get(email=request.user.email)
+    except Students.DoesNotExist:
+        messages.error(request, 'You are not registered as a student.')
+        return redirect('home')
+    
+    # Verify student is in the correct stream
+    if assignment.stream_id != student.stream_id:
+        messages.error(request, 'You do not have access to this assignment.')
+        return redirect('student_assignments')
+    
+    # Get or create submission record
+    submission, created = StudentAssignmentSubmission.objects.get_or_create(
+        assignment_id=assignment.id,
+        student_id=student.id
+    )
+    
+    if request.method == 'POST':
+        form = StudentAssignmentSubmissionForm(request.POST, request.FILES, instance=submission)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.submission_date = timezone.now()
+            submission.status = 'SUBMITTED'
+            submission.save()
+            messages.success(request, 'Assignment submitted successfully!')
+            return redirect('student_assignment_detail', pk=pk)
+    else:
+        form = StudentAssignmentSubmissionForm(instance=submission)
+    
+    context = {
+        'assignment': assignment,
+        'submission': submission,
+        'form': form,
+        'is_student': True,
+    }
+    return render(request, 'assignments/student_assignment_detail.html', context)
+
+
+@login_required
+def parent_assignments(request):
+    """
+    Parent view to see assignments for their child(ren).
+    Parents can view and comment but cannot grade or submit.
+    """
+    try:
+        # Find the student linked to this user (via email)
+        student = Students.objects.get(email=request.user.email)
+    except Students.DoesNotExist:
+        messages.error(request, 'You do not have a student profile.')
+        return redirect('home')
+    
+    # Get assignments for the student's stream
+    assignments = Assignment.objects.filter(stream_id=student.stream_id).order_by('-due_date', '-created_at')
+    
+    # Get submissions for the student
+    submissions = StudentAssignmentSubmission.objects.filter(student_id=student).select_related('assignment_id')
+    
+    context = {
+        'assignments': assignments,
+        'submissions': submissions,
+        'student': student,
+        'is_parent': True,
+    }
+    return render(request, 'assignments/parent_list.html', context)

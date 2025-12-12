@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Grade Submission{% endblock %}
+{% block content %}
+<div class="container mt-5 pt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Grade Submission - {{ submission.student_id.fname }} {{ submission.student_id.lname }}</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>Assignment:</strong> {{ assignment.title }}</p>
+          {% if submission.submission_file %}
+            <p><a href="{{ submission.submission_file.url }}" download class="btn btn-outline-secondary btn-sm">Download Submission</a></p>
+          {% endif %}
+          {% if submission.submission_text %}
+            <div class="mb-3"><strong>Submission Text:</strong><div class="border p-2">{{ submission.submission_text|linebreaks }}</div></div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="mb-3">
+              {{ form.marks_obtained.label_tag }}
+              {{ form.marks_obtained }}
+            </div>
+            <div class="mb-3">
+              {{ form.remarks.label_tag }}
+              {{ form.remarks }}
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-success" type="submit">Save Grade</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

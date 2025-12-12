@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Assignments - Student{% endblock %}
+{% block content %}
+<div class="container mt-5 pt-4">
+  <h2>Assignments</h2>
+  {% if assignments %}
+  <div class="list-group mt-3">
+    {% for a in assignments %}
+      <a href="{% url 'student_assignment_detail' a.id %}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ a.title }}</h5>
+          <small class="text-muted">Due {{ a.due_date|date:"d M Y, H:i" }}</small>
+        </div>
+        <p class="mb-1 small text-muted">{{ a.subject_id.subject_name }} — {{ a.stream_id.class_id.class_name }} {{ a.stream_id.stream_name }}</p>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info">No assignments available for your class yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

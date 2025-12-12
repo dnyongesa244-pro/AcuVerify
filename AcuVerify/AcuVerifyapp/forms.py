@@ -11,7 +11,7 @@ login/authentication, and class management.
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from django.contrib.auth.models import User
-from .models import Staff, Subject, Classes, Students, Streams, AcademicYear
+from .models import Staff, Subject, Classes, Students, Streams, AcademicYear, Assignment, StudentAssignmentSubmission
 
 
 class StaffRegistrationForm(forms.ModelForm):
@@ -73,10 +73,11 @@ class StaffRegistrationForm(forms.ModelForm):
             Subject.objects.filter(subject_name__in=self.KENYA_SUBJECTS).values_list("subject_name", flat=True)
         )
         missing = [name for name in self.KENYA_SUBJECTS if name not in existing_names]
-        Subject.objects.bulk_create(
-            [Subject(subject_name=name, class_id=generic_class) for name in missing],
-            ignore_conflicts=True,
-        )
+        # Create missing Subject records and attach them to the generic class via M2M
+        for name in missing:
+            subj, created = Subject.objects.get_or_create(subject_name=name)
+            # Ensure the subject is linked to the generic class so it appears in forms
+            subj.classes.add(generic_class)
 
     def save(self, commit=True):
         """
@@ -321,11 +322,17 @@ class AssignStreamForm(forms.Form):
             try:
                 staff = Staff.objects.get(id=staff_id)
                 stream = Streams.objects.select_related('class_id').get(id=stream_id)
-                # Subjects that belong to the stream's class AND are in staff specializations
+                
+                # Get the teacher's specializations
+                teacher_subjects = staff.subject_specialization.values_list('subject_name', flat=True)
+                
+                # Show all subjects for this stream's class
+                # Filter to only show subjects where the subject name matches teacher's specializations
                 qs = Subject.objects.filter(
-                    class_id=stream.class_id,
-                    id__in=staff.subject_specialization.values_list('id', flat=True)
+                    classes=stream.class_id,
+                    subject_name__in=teacher_subjects
                 ).order_by('subject_name')
+                
                 self.fields['subjects'].queryset = qs
             except (Staff.DoesNotExist, Streams.DoesNotExist):
                 # If staff or stream doesn't exist, show no subjects
@@ -401,4 +408,106 @@ class AssignClassTeacherForm(forms.Form):
 #         elif self.class_id:
 #             return f"{self.class_id.class_name} - {self.staff_id.fname} {self.staff_id.lname}"
 #         return f"{self.staff_id.fname} {self.staff_id.lname}"
+
+
+class AssignmentForm(forms.ModelForm):
+    """
+    Form for teachers to create and post assignments to a stream/subject.
+    
+    Fields:
+    - title: Assignment title
+    - description: Instructions and details
+    - assignment_type: Type (Homework, Holiday, Project, etc.)
+    - subject_id: Which subject this assignment is for
+    - stream_id: Which stream/class this is assigned to
+    - total_marks: Total marks for grading
+    - due_date: Deadline for submission
+    - assignment_file: Optional file attachment (PDF, DOC, etc.)
+    """
+    # HTML5 datetime-local inputs send values like: 2026-01-01T09:30
+    # Ensure Django parses that format by overriding the field and
+    # providing a matching input format.
+    due_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        input_formats=['%Y-%m-%dT%H:%M'],
+    )
+
+    class Meta:
+        model = Assignment
+        fields = ['title', 'description', 'assignment_type', 'subject_id', 'stream_id', 'total_marks', 'due_date', 'assignment_file']
+        labels = {
+            'title': 'Assignment Title',
+            'description': 'Instructions & Details',
+            'assignment_type': 'Assignment Type',
+            'subject_id': 'Subject',
+            'stream_id': 'Stream/Class',
+            'total_marks': 'Total Marks',
+            'due_date': 'Due Date & Time',
+            'assignment_file': 'Attachment (PDF, DOC, etc.)'
+        }
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Chapter 5 Algebra Problems'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Provide detailed instructions...'}),
+            'assignment_type': forms.Select(attrs={'class': 'form-control'}),
+            'subject_id': forms.Select(attrs={'class': 'form-control'}),
+            'stream_id': forms.Select(attrs={'class': 'form-control'}),
+            'total_marks': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.5'}),
+            'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'assignment_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.xls,.xlsx'}),
+        }
+
+
+class StudentAssignmentSubmissionForm(forms.ModelForm):
+    """
+    Form for students to submit assignments.
+    
+    Fields:
+    - submission_file: The student's work (PDF, DOC, image, etc.)
+    - submission_text: Alternative text-based submission
+    """
+    class Meta:
+        model = StudentAssignmentSubmission
+        fields = ['submission_file', 'submission_text']
+        labels = {
+            'submission_file': 'Upload Your Work',
+            'submission_text': 'Or write your answer here'
+        }
+        widgets = {
+            'submission_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'}),
+            'submission_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 8, 'placeholder': 'Type your answer here...'}),
+        }
+
+
+class AssignmentGradingForm(forms.ModelForm):
+    """
+    Form for teachers to grade submissions.
+    
+    Fields:
+    - marks_obtained: Marks given
+    - remarks: Feedback/comments
+    """
+    class Meta:
+        model = StudentAssignmentSubmission
+        fields = ['marks_obtained', 'remarks']
+        labels = {
+            'marks_obtained': 'Marks',
+            'remarks': 'Feedback/Comments'
+        }
+        widgets = {
+            'marks_obtained': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.5'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Provide constructive feedback...'}),
+        }
+
+
+class AssignmentCommentForm(forms.Form):
+    """
+    Form for students and parents to comment on assignments.
+    
+    Fields:
+    - comment: Comment text
+    """
+    comment = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Add a comment...'}),
+        label='Comment'
+    )
 

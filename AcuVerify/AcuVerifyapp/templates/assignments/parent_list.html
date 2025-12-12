@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Assignments - Parent{% endblock %}
+{% block content %}
+<div class="container mt-5 pt-4">
+  <h2>Assignments for {{ student.fname }} {{ student.lname }}</h2>
+  <p class="text-muted">Class: {{ student.stream_id.class_id.class_name }} {{ student.stream_id.stream_name }}</p>
+
+  {% if assignments %}
+  <div class="table-responsive mt-4">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Assignment</th>
+          <th>Subject</th>
+          <th>Type</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Marks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+          <tr>
+            <td><strong>{{ a.title }}</strong></td>
+            <td>{{ a.subject_id.subject_name }}</td>
+            <td><span class="badge bg-info">{{ a.get_assignment_type_display }}</span></td>
+            <td>{{ a.due_date|date:"d M Y, H:i" }}</td>
+            <td>
+              {% for sub in submissions %}
+                {% if sub.assignment_id == a.id %}
+                  <span class="badge bg-{% if sub.status == 'GRADED' %}success{% elif sub.status == 'SUBMITTED' or sub.status == 'LATE' %}primary{% else %}warning{% endif %}">
+                    {{ sub.get_status_display }}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </td>
+            <td>
+              {% for sub in submissions %}
+                {% if sub.assignment_id == a.id and sub.marks_obtained %}
+                  {{ sub.marks_obtained }} / {{ a.total_marks }}
+                {% endif %}
+              {% empty %}
+                —
+              {% endfor %}
+            </td>
+            <td>
+              <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ a.id }}">View</a>
+            </td>
+          </tr>
+
+          <!-- Detail Modal -->
+          <div class="modal fade" id="detailModal{{ a.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">{{ a.title }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <h6>Subject: {{ a.subject_id.subject_name }}</h6>
+                  <p><strong>Description:</strong></p>
+                  <p>{{ a.description|linebreaks }}</p>
+                  {% if a.assignment_file %}
+                    <p><a href="{{ a.assignment_file.url }}" class="btn btn-outline-secondary btn-sm" download>Download Attachment</a></p>
+                  {% endif %}
+                  <p><strong>Total Marks:</strong> {{ a.total_marks }}</p>
+                  <p><strong>Due Date:</strong> {{ a.due_date|date:"d M Y, H:i" }}</p>
+
+                  {% for sub in submissions %}
+                    {% if sub.assignment_id == a.id %}
+                      <hr>
+                      <h6>Submission Status: <span class="badge bg-{% if sub.status == 'GRADED' %}success{% elif sub.status == 'SUBMITTED' or sub.status == 'LATE' %}primary{% else %}warning{% endif %}">{{ sub.get_status_display }}</span></h6>
+                      {% if sub.submission_file %}
+                        <p><a href="{{ sub.submission_file.url }}" class="btn btn-outline-secondary btn-sm" download>View Submission</a></p>
+                      {% endif %}
+                      {% if sub.submission_text %}
+                        <p><strong>Submitted Answer:</strong></p>
+                        <div class="border p-2 bg-light">{{ sub.submission_text|linebreaks }}</div>
+                      {% endif %}
+                      {% if sub.marks_obtained is not None %}
+                        <p><strong>Marks Obtained:</strong> {{ sub.marks_obtained }} / {{ a.total_marks }}</p>
+                        {% if sub.percentage_score %}
+                          <p><strong>Percentage:</strong> {{ sub.percentage_score|floatformat:1 }}%</p>
+                        {% endif %}
+                        {% if sub.remarks %}
+                          <p><strong>Teacher's Feedback:</strong></p>
+                          <div class="border p-2 bg-light">{{ sub.remarks|linebreaks }}</div>
+                        {% endif %}
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info mt-4">No assignments available for this class yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

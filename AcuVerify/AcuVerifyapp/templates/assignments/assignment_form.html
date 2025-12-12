@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="container mt-5 pt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">{{ title }}</h5>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="mb-3">
+              {{ form.title.label_tag }}
+              {{ form.title }}
+              {% for e in form.title.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.description.label_tag }}
+              {{ form.description }}
+              {% for e in form.description.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.assignment_type.label_tag }}
+                {{ form.assignment_type }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.total_marks.label_tag }}
+                {{ form.total_marks }}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.subject_id.label_tag }}
+                {{ form.subject_id }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.stream_id.label_tag }}
+                {{ form.stream_id }}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.due_date.label_tag }}
+              {{ form.due_date }}
+              <div class="form-text">Use the date & time picker or enter in this format: <code>YYYY-MM-DDTHH:MM</code></div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.assignment_file.label_tag }}
+              {{ form.assignment_file }}
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-success" type="submit">Post Assignment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% comment %} Include flatpickr so browsers that don't show a native time UI get a reliable date+time picker. {% endcomment %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      flatpickr('#id_due_date', {
+        enableTime: true,
+        time_24hr: false,
+        dateFormat: "Y-m-d'T'H:i",
+        allowInput: true
+      });
+    } catch (e) {
+      // if flatpickr fails, the input will still be a native datetime-local field
+      console.warn('flatpickr init failed', e);
+    }
+  });
+</script>
+{% endblock %}
