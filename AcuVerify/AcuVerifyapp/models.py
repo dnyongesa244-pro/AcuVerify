@@ -700,6 +700,7 @@ class MyUpload(models.Model):
     - title: Title or name of the upload
     - description: Description of the file
     - file: The uploaded file
+    - due_date: Due date for the file
     - uploaded_by: Staff member who uploaded the file
     - uploaded_at: Timestamp of upload
     - updated_at: Last update timestamp
@@ -707,6 +708,7 @@ class MyUpload(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     file = models.FileField(upload_to='myuploaded/')
+    due_date = models.DateTimeField(blank=True, null=True)
     uploaded_by = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

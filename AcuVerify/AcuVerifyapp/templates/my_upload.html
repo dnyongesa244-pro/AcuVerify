@@ -38,6 +38,19 @@
                         <p class="text-red-500 text-xs italic">{{ form.description.errors }}</p>
                     {% endif %}
                 </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_due_date">
+                        Due Date (Optional)
+                    </label>
+                    {% render_field form.due_date class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.due_date.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.due_date.errors }}</p>
+                    {% endif %}
+                </div>
+                
+
+
                 
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="id_file">
@@ -65,6 +78,7 @@
                         <tr class="bg-gray-200">
                             <th class="border border-gray-300 p-3 text-left">Title</th>
                             <th class="border border-gray-300 p-3 text-left">Description</th>
+                            <th class="border border-gray-300 p-3 text-left">Due Date</th>
                             <th class="border border-gray-300 p-3 text-left">Uploaded By</th>
                             <th class="border border-gray-300 p-3 text-left">Date</th>
                             <th class="border border-gray-300 p-3 text-center">Download</th>
@@ -75,6 +89,13 @@
                             <tr class="hover:bg-gray-100">
                                 <td class="border border-gray-300 p-3">{{ upload.title }}</td>
                                 <td class="border border-gray-300 p-3">{{ upload.description|truncatewords:10 }}</td>
+                                <td class="border border-gray-300 p-3">
+                                    {% if upload.due_date %}
+                                        {{ upload.due_date|date:"d/m/Y" }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
                                 <td class="border border-gray-300 p-3">
                                     {% if upload.uploaded_by %}
                                         {{ upload.uploaded_by.fname }} {{ upload.uploaded_by.lname }}
@@ -89,7 +110,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
+                                <td colspan="6" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -97,4 +118,17 @@
             </div>
         {% endif %}
     </div>
+    <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      flatpickr('#id_due_date', {
+        enableTime: false,
+        dateFormat: "d/m/Y",
+        allowInput: true
+      });
+    } catch (e) {
+      console.warn('flatpickr init failed', e);
+    }
+  });
+</script>
 {% endblock %}

@@ -520,11 +520,11 @@ class  DocUploadForm(forms.Form):
     )
 
 class MyUploadForm(forms.ModelForm):
-    """Form for uploading files with title and description"""
+    """Form for uploading files with title, description, and due date"""
     class Meta:
         from .models import MyUpload
         model = MyUpload
-        fields = ['title', 'description', 'file']
+        fields = ['title', 'description', 'due_date', 'file']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
@@ -534,6 +534,11 @@ class MyUploadForm(forms.ModelForm):
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
                 'placeholder': 'Enter file description',
                 'rows': 4
+            }),
+            'due_date': forms.DateInput(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                'type': 'date',
+                'placeholder': 'Select due date (optional)'
             }),
             'file': forms.FileInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
