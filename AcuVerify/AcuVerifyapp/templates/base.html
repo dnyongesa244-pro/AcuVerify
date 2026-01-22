@@ -395,9 +395,9 @@
                 </a>
                 <div class="collapse submenu" id="academicSubmenu">
                     <a href="{% url 'manage_academic_year' %}"><i class="fas fa-calendar me-2"></i>Academic Year</a>
-                    {% if user.is_staff %}
+                    {% if is_teacher %}
                         <a href="{% url 'teacher_assignments' %}"><i class="fas fa-tasks me-2"></i>My Assignments</a>
-                        <a href="{% url 'create_assignment' %}"><i class="fas fa-plus me-2"></i>Post Assignment</a>
+                        <a href="{% url 'uploadfile' %}"><i class="fas fa-plus me-2"></i>Post Assignment</a>
                     {% endif %}
                     {% if user.is_authenticated %}
                         <a href="{% url 'student_assignments' %}"><i class="fas fa-file-alt me-2"></i>Assignments</a>

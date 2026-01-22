@@ -7,7 +7,7 @@ def profile_picture(request):
     and returns the image URL if present. Falls back to initials.
     """
     user = getattr(request, 'user', None)
-    result = {'profile_pic_url': None, 'profile_initials': None}
+    result = {'profile_pic_url': None, 'profile_initials': None, 'is_teacher': False}
     if not user or not user.is_authenticated:
         return result
 
@@ -28,12 +28,15 @@ def profile_picture(request):
         from .models import Staff, Students
         # Try Staff first
         staff = Staff.objects.filter(email__iexact=getattr(user, 'email', '')).first()
-        if staff and getattr(staff, 'profile_pic', None):
-            try:
-                result['profile_pic_url'] = staff.profile_pic.url
-                return result
-            except Exception:
-                result['profile_pic_url'] = None
+        if staff:
+            result['is_teacher'] = True
+            if getattr(staff, 'profile_pic', None):
+                try:
+                    result['profile_pic_url'] = staff.profile_pic.url
+                    return result
+                except Exception:
+                    result['profile_pic_url'] = None
+            return result
 
         student = Students.objects.filter(email__iexact=getattr(user, 'email', '')).first()
         if student and getattr(student, 'profile_pic', None):

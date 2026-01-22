@@ -26,8 +26,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import Staff, Students
-from .forms import StaffRegistrationForm, StudentRegistrationForm, EmailForm, PasswordForm, CreatePasswordForm, AssignStreamForm
+from .models import Staff, Students, MyUpload
+from .forms import StaffRegistrationForm, StudentRegistrationForm, EmailForm, PasswordForm, CreatePasswordForm, AssignStreamForm, MyUploadForm
 from .models import StaffSubjectStream, Subject, Streams, AcademicYear, Assignment, StudentAssignmentSubmission
 from .forms import StaffProfileForm, AssignmentForm, StudentAssignmentSubmissionForm, AssignmentGradingForm
 
@@ -618,6 +618,35 @@ def teacher_assignments(request):
 
 
 @login_required
+def uploadfile(request):
+    """
+    Teacher view to create a new assignment.
+    """
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, request.FILES)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.created_by = staff
+            assignment.save()
+            messages.success(request, f'Assignment "{assignment.title}" created successfully.')
+            return redirect('teacher_assignments')  
+    else:
+        form = AssignmentForm()
+    
+    context = {
+        'form': form,
+        'is_teacher': True,
+    }
+    return render(request, 'assignments/assignment_form.html', context)
+
+
+@login_required
 def create_assignment(request):
     """
     Teacher view to create and post a new assignment.
@@ -825,3 +854,34 @@ def parent_assignments(request):
         'is_parent': True,
     }
     return render(request, 'assignments/parent_list.html', context)
+
+@login_required
+def my_upload(request):
+    """
+    View for uploading files with a title.
+    Allows authenticated users to upload files.
+    """
+    try:
+        staff = Staff.objects.get(email=request.user.email)
+    except Staff.DoesNotExist:
+        staff = None
+    
+    if request.method == 'POST':
+        form = MyUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            upload = form.save(commit=False)
+            upload.uploaded_by = staff
+            upload.save()
+            messages.success(request, f'File "{upload.title}" uploaded successfully!')
+            return redirect('my_upload')
+    else:
+        form = MyUploadForm()
+    
+    # Get all uploaded files
+    uploads = MyUpload.objects.all()
+    
+    context = {
+        'form': form,
+        'uploads': uploads,
+    }
+    return render(request, 'my_upload.html', context)

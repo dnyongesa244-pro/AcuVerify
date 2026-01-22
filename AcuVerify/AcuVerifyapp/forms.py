@@ -511,3 +511,31 @@ class AssignmentCommentForm(forms.Form):
         label='Comment'
     )
 
+
+class  DocUploadForm(forms.Form):
+    """Form for uploading documents/files."""
+    document = forms.FileField(
+        label='Select a file',
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+    )
+
+class MyUploadForm(forms.ModelForm):
+    """Form for uploading files with title and description"""
+    class Meta:
+        from .models import MyUpload
+        model = MyUpload
+        fields = ['title', 'description', 'file']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                'placeholder': 'Enter file title'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
+                'placeholder': 'Enter file description',
+                'rows': 4
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+            })
+        }

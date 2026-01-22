@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}File Upload{% endblock %}
+
+{% block content %}
+    <div class="p-8 flex flex-col items-center">
+        <h1 class="font-medium leading-tight text-4xl mt-0 mb-4 text-blue-600">Upload File</h1>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="w-full max-w-md">
+            <form method="post" enctype="multipart/form-data" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_title">
+                        File Title
+                    </label>
+                    {% render_field form.title class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.title.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.title.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_description">
+                        Description
+                    </label>
+                    {% render_field form.description class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.description.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_file">
+                        Select File
+                    </label>
+                    {% render_field form.file class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.file.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.file.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        {% if uploads %}
+            <div class="w-full max-w-4xl mt-8">
+                <h2 class="text-2xl font-bold mb-4">Uploaded Files</h2>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border border-gray-300 p-3 text-left">Title</th>
+                            <th class="border border-gray-300 p-3 text-left">Description</th>
+                            <th class="border border-gray-300 p-3 text-left">Uploaded By</th>
+                            <th class="border border-gray-300 p-3 text-left">Date</th>
+                            <th class="border border-gray-300 p-3 text-center">Download</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for upload in uploads %}
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-300 p-3">{{ upload.title }}</td>
+                                <td class="border border-gray-300 p-3">{{ upload.description|truncatewords:10 }}</td>
+                                <td class="border border-gray-300 p-3">
+                                    {% if upload.uploaded_by %}
+                                        {{ upload.uploaded_by.fname }} {{ upload.uploaded_by.lname }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </td>
+                                <td class="border border-gray-300 p-3">{{ upload.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                <td class="border border-gray-300 p-3 text-center">
+                                    <a href="{{ upload.file.url }}" target="_blank" class="text-blue-600 hover:underline">Download</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -692,3 +692,27 @@ class StudentAssignmentSubmission(models.Model):
         super().save(*args, **kwargs)
 
 
+class MyUpload(models.Model):
+    """
+    File upload model for storing user-uploaded files with titles and descriptions.
+    
+    Fields:
+    - title: Title or name of the upload
+    - description: Description of the file
+    - file: The uploaded file
+    - uploaded_by: Staff member who uploaded the file
+    - uploaded_at: Timestamp of upload
+    - updated_at: Last update timestamp
+    """
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='myuploaded/')
+    uploaded_by = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return self.title
