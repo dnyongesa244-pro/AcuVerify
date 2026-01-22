@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Document Upload{% endblock %}
+
+{% block content %}
+    <div class="p-8 flex flex-col items-center">
+        <h1 class="font-medium leading-tight text-4xl mt-0 mb-4 text-blue-600">Upload Document</h1>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mb-4">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% if form %}
+            <form method="post" enctype="multipart/form-data" class="w-full max-w-sm">
+                {% csrf_token %}
+                <div class="md:flex md:items-center mb-6">
+                    <div class="md:w-1/3">
+                        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="id_title">
+                            Title
+                        </label>
+                    </div>
+                    <div class="md:w-2/3">
+                        <input type="text" name="title" id="id_title" class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" required />
+                    </div>
+                </div>
+                <div class="md:flex md:items-center mb-6">
+                    <div class="md:w-1/3">
+                        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="id_file_upload">
+                            Upload File
+                        </label>
+                    </div>
+                    <div class="md:w-2/3">
+                        <input type="file" name="file_upload" id="id_file_upload" class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" required />
+                    </div>
+                </div>
+                <div class="md:flex md:items-center">
+                    <div class="md:w-1/3"></div>
+                    <div class="md:w-2/3">
+                        <button class="shadow bg-purple-500 hover:bg-purple-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded" type="submit">
+                            Upload
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <p class="text-gray-500 text-center">No form available</p>
+        {% endif %}
+
+        {% if documents %}
+            <div class="w-full max-w-2xl mt-8">
+                <h2 class="text-2xl font-bold mb-4">Uploaded Documents</h2>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border border-gray-300 p-2">Document Title</th>
+                            <th class="border border-gray-300 p-2">Type</th>
+                            <th class="border border-gray-300 p-2">Assignment</th>
+                            <th class="border border-gray-300 p-2">Uploaded</th>
+                            <th class="border border-gray-300 p-2">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-300 p-2">{{ doc.title }}</td>
+                                <td class="border border-gray-300 p-2"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">{{ doc.get_document_type_display }}</span></td>
+                                <td class="border border-gray-300 p-2">{{ doc.assignment.title }}</td>
+                                <td class="border border-gray-300 p-2">{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                <td class="border border-gray-300 p-2">
+                                    <a href="{{ doc.document.url }}" target="_blank" class="text-blue-600 hover:underline">Download</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="border border-gray-300 p-2 text-center text-gray-500">No documents uploaded yet</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
