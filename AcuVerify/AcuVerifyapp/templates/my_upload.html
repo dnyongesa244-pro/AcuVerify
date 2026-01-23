@@ -105,6 +105,9 @@
                         <tr class="bg-gray-200">
                             <th class="border border-gray-300 p-3 text-left">Title</th>
                             <th class="border border-gray-300 p-3 text-left">Description</th>
+                            <th class="border border-gray-300 p-3 text-left">File Type</th>
+                            <th class="border border-gray-300 p-3 text-left">Subject</th>
+                            <th class="border border-gray-300 p-3 text-left">Stream/Class</th>
                             <th class="border border-gray-300 p-3 text-left">Due Date</th>
                             <th class="border border-gray-300 p-3 text-left">Uploaded By</th>
                             <th class="border border-gray-300 p-3 text-left">Date</th>
@@ -116,9 +119,12 @@
                             <tr class="hover:bg-gray-100">
                                 <td class="border border-gray-300 p-3">{{ upload.title }}</td>
                                 <td class="border border-gray-300 p-3">{{ upload.description|truncatewords:10 }}</td>
+                                <td class="border border-gray-300 p-3">{{ upload.get_file_type_display }}</td>
+                                <td class="border border-gray-300 p-3">{{ upload.subject_id.subject_name|default:"N/A" }}</td>
+                                <td class="border border-gray-300 p-3">{{ upload.stream_id.stream_name|default:"N/A" }}</td>
                                 <td class="border border-gray-300 p-3">
                                     {% if upload.due_date %}
-                                        {{ upload.due_date|date:"d/m/Y" }}
+                                        {{ upload.due_date|date:"d/m/Y H:i" }}
                                     {% else %}
                                         —
                                     {% endif %}
@@ -137,7 +143,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
+                                <td colspan="9" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
                             </tr>
                         {% endfor %}
                     </tbody>
