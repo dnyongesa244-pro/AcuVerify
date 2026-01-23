@@ -54,7 +54,7 @@ urlpatterns = [
     # Assignment management (teacher, student, parent views)
     path('assignments/teacher/', views.teacher_assignments, name='teacher_assignments'),
     path('uploadfile/', views.uploadfile, name='uploadfile'),
-    path('assignments/create/', views.create_assignment, name='create_assignment'),
+    path('my_upload/create/', views.create_assignment, name='my_upload'),
     path('assignments/teacher/<int:pk>/', views.teacher_assignment_detail, name='teacher_assignment_detail'),
     path('assignments/grade/<int:submission_pk>/', views.grade_submission, name='grade_submission'),
     
@@ -63,6 +63,6 @@ urlpatterns = [
     
     path('assignments/parent/', views.parent_assignments, name='parent_assignments'),
     
-    path('my-upload/', views.my_upload, name='my_upload'),
+    path('assignments/create/', views.my_upload, name='create_assignment'),
 
 ]
