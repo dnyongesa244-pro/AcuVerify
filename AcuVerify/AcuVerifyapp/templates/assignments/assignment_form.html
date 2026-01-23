@@ -12,7 +12,7 @@
           <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             {{ form.non_field_errors }}
-
+             
             <div class="mb-3">
               {{ form.title.label_tag }}
               {{ form.title }}
