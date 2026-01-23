@@ -705,9 +705,21 @@ class MyUpload(models.Model):
     - uploaded_at: Timestamp of upload
     - updated_at: Last update timestamp
     """
+    FILE_TYPE_CHOICES = [
+        ('PDF', 'PDF Document'),
+        ('DOC', 'Word Document'),
+        ('IMG', 'Image'),
+        ('VIDEO', 'Video'),
+        ('AUDIO', 'Audio'),
+        ('OTHER', 'Other'),
+    ]
+
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     file = models.FileField(upload_to='myuploaded/')
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES, default='OTHER')
+    subject_id = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_materials')
+    stream_id = models.ForeignKey(Streams, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_materials')
     due_date = models.DateTimeField(blank=True, null=True)
     uploaded_by = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)

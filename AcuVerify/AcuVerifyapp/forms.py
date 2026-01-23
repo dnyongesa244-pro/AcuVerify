@@ -524,7 +524,7 @@ class MyUploadForm(forms.ModelForm):
     class Meta:
         from .models import MyUpload
         model = MyUpload
-        fields = ['title', 'description', 'due_date', 'file']
+        fields = ['title', 'description', 'file_type', 'subject_id', 'stream_id', 'due_date', 'file']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
@@ -535,6 +535,15 @@ class MyUploadForm(forms.ModelForm):
                 'placeholder': 'Enter file description',
                 'rows': 4
             }),
+            'file_type': forms.Select(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+            }),
+            'subject_id': forms.Select(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+            }),
+            'stream_id': forms.Select(attrs={
+                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+            }),
             'due_date': forms.DateInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
                 'type': 'date',
@@ -543,4 +552,13 @@ class MyUploadForm(forms.ModelForm):
             'file': forms.FileInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
             })
+        }
+        labels = {
+            'title': 'File Title',
+            'description': 'Description',
+            'file_type': 'File Type',
+            'subject_id': 'Subject',
+            'stream_id': 'Stream/Class',
+            'due_date': 'Due Date',
+            'file': 'Select File',
         }

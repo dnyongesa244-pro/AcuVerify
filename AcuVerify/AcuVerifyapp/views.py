@@ -865,7 +865,9 @@ def my_upload(request):
         staff = Staff.objects.get(email=request.user.email)
     except Staff.DoesNotExist:
         staff = None
-    
+        messages.error(request, 'You are not registered as a staff member.')
+        return redirect('home')
+
     if request.method == 'POST':
         form = MyUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -874,11 +876,25 @@ def my_upload(request):
             upload.save()
             messages.success(request, f'File "{upload.title}" uploaded successfully!')
             return redirect('my_upload')
-    else:
+        else:
+            print("MyUploadForm is NOT valid. Errors:", form.errors) # Debugging line
+            # Repopulate querysets for streams and subjects on invalid POST
+            teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
+            form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams)
+            teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
+            form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects)
+    else: # GET request
         form = MyUploadForm()
+        # Filter to only streams the teacher teaches
+        teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
+        form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams)
+        
+        # Filter to only subjects the teacher teaches
+        teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
+        form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects)
     
     # Get all uploaded files
-    uploads = MyUpload.objects.all()
+    uploads = MyUpload.objects.all() # Consider filtering by uploaded_by=staff if only showing teacher's uploads
     
     context = {
         'form': form,

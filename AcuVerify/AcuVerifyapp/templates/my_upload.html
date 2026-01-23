@@ -39,37 +39,32 @@
                     {% endif %}
                 </div>
                 <div class="mb-4">
-                    <lable class="block text-gray-700 text-sm font-bold mb-2" for="id_file_type">
-                        file type op
-                    </lable>
-                    <select name="file_type" id="id_file_type" class="shadow appearance-none border rounded w-full py-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value="">Select file_type</option>
-                        <option value="pdf">pdf</option>
-                        <option value="png">Png</option>
-                    </select>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_file_type">
+                        File Type
+                    </label>
+                    {% render_field form.file_type class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.file_type.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.file_type.errors }}</p>
+                    {% endif %}
                 </div>
 
-               <div class="mb-4">
-                    <lable class="block text-gray-700 text-sm font-bold mb-2" for="id_file_type">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_subject_id">
                         Subject
-                    </lable>
-                    <select name="file_type" id="id_file_type" class="shadow appearance-none border rounded w-full py-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value="">Select subject</option>
-                        <option value="pdf">English</option>
-                        <option value="png">Kiswahili</option>
-                        <option value="cre">CRE</option>
-                        <option value="Maths">Maths</option>
-                    </select>
+                    </label>
+                    {% render_field form.subject_id class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.subject_id.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.subject_id.errors }}</p>
+                    {% endif %}
                 </div>
                  <div class="mb-4">
-                    <lable class="block text-gray-700 text-sm font-bold mb-2" for="id_file_type">
-                        Stream/class
-                    </lable>
-                    <select name="file_type" id="id_file_type" class="shadow appearance-none border rounded w-full py-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value="">Select select Streem/class</option>
-                        <option value="3a">Grade 3 a</option>
-                        <option value="3b">Grade 3b</option>
-                    </select>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_stream_id">
+                        Stream/Class
+                    </label>
+                    {% render_field form.stream_id class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.stream_id.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.stream_id.errors }}</p>
+                    {% endif %}
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="id_due_date">
