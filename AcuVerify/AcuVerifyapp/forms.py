@@ -427,9 +427,9 @@ class AssignmentForm(forms.ModelForm):
     # HTML5 datetime-local inputs send values like: 2026-01-01T09:30
     # Ensure Django parses that format by overriding the field and
     # providing a matching input format.
-    due_date = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-        input_formats=['%Y-%m-%dT%H:%M'],
+    due_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        input_formats=['%Y-%m-%d'],
     )
 
     class Meta:
@@ -524,7 +524,7 @@ class MyUploadForm(forms.ModelForm):
     class Meta:
         from .models import MyUpload
         model = MyUpload
-        fields = ['title', 'description', 'file_type', 'subject_id', 'stream_id', 'due_date', 'file']
+        fields = ['title', 'description', 'file']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
@@ -535,20 +535,6 @@ class MyUploadForm(forms.ModelForm):
                 'placeholder': 'Enter file description',
                 'rows': 4
             }),
-            'file_type': forms.Select(attrs={
-                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
-            }),
-            'subject_id': forms.Select(attrs={
-                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
-            }),
-            'stream_id': forms.Select(attrs={
-                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
-            }),
-            'due_date': forms.DateInput(attrs={
-                'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline',
-                'type': 'date',
-                'placeholder': 'Select due date (optional)'
-            }),
             'file': forms.FileInput(attrs={
                 'class': 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
             })
@@ -556,9 +542,5 @@ class MyUploadForm(forms.ModelForm):
         labels = {
             'title': 'File Title',
             'description': 'Description',
-            'file_type': 'File Type',
-            'subject_id': 'Subject',
-            'stream_id': 'Stream/Class',
-            'due_date': 'Due Date',
             'file': 'Select File',
         }

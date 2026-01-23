@@ -39,12 +39,12 @@
                     {% endif %}
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_file_type">
-                        File Type
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_assignment_type">
+                        Assignment Type
                     </label>
-                    {% render_field form.file_type class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
-                    {% if form.file_type.errors %}
-                        <p class="text-red-500 text-xs italic">{{ form.file_type.errors }}</p>
+                    {% render_field form.assignment_type class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.assignment_type.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.assignment_type.errors }}</p>
                     {% endif %}
                 </div>
 
@@ -67,25 +67,31 @@
                     {% endif %}
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_due_date">
-                        Due Date (Optional)
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_total_marks">
+                        Total Marks
                     </label>
-                    {% render_field form.due_date class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% render_field form.total_marks class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.total_marks.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.total_marks.errors }}</p>
+                    {% endif %}
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_due_date">
+                        Due Date
+                    </label>
+                    {% render_field form.due_date class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="date" %}
                     {% if form.due_date.errors %}
                         <p class="text-red-500 text-xs italic">{{ form.due_date.errors }}</p>
                     {% endif %}
                 </div>
                 
-
-                
-                
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_file">
-                        Select File
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="id_assignment_file">
+                        Attachment (PDF, DOC, etc.)
                     </label>
-                    {% render_field form.file class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
-                    {% if form.file.errors %}
-                        <p class="text-red-500 text-xs italic">{{ form.file.errors }}</p>
+                    {% render_field form.assignment_file class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+                    {% if form.assignment_file.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.assignment_file.errors }}</p>
                     {% endif %}
                 </div>
                 
@@ -105,45 +111,51 @@
                         <tr class="bg-gray-200">
                             <th class="border border-gray-300 p-3 text-left">Title</th>
                             <th class="border border-gray-300 p-3 text-left">Description</th>
-                            <th class="border border-gray-300 p-3 text-left">File Type</th>
+                            <th class="border border-gray-300 p-3 text-left">Assignment Type</th>
                             <th class="border border-gray-300 p-3 text-left">Subject</th>
                             <th class="border border-gray-300 p-3 text-left">Stream/Class</th>
+                            <th class="border border-gray-300 p-3 text-left">Total Marks</th>
                             <th class="border border-gray-300 p-3 text-left">Due Date</th>
-                            <th class="border border-gray-300 p-3 text-left">Uploaded By</th>
-                            <th class="border border-gray-300 p-3 text-left">Date</th>
+                            <th class="border border-gray-300 p-3 text-left">Created By</th>
+                            <th class="border border-gray-300 p-3 text-left">Created At</th>
                             <th class="border border-gray-300 p-3 text-center">Download</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for upload in uploads %}
+                        {% for assignment in uploads %}
                             <tr class="hover:bg-gray-100">
-                                <td class="border border-gray-300 p-3">{{ upload.title }}</td>
-                                <td class="border border-gray-300 p-3">{{ upload.description|truncatewords:10 }}</td>
-                                <td class="border border-gray-300 p-3">{{ upload.get_file_type_display }}</td>
-                                <td class="border border-gray-300 p-3">{{ upload.subject_id.subject_name|default:"N/A" }}</td>
-                                <td class="border border-gray-300 p-3">{{ upload.stream_id.stream_name|default:"N/A" }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.title }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.description|truncatewords:10 }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.get_assignment_type_display }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.subject_id.subject_name|default:"N/A" }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.stream_id.stream_name|default:"N/A" }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.total_marks }}</td>
                                 <td class="border border-gray-300 p-3">
-                                    {% if upload.due_date %}
-                                        {{ upload.due_date|date:"d/m/Y H:i" }}
+                                    {% if assignment.due_date %}
+                                        {{ assignment.due_date|date:"d/m/Y" }}
                                     {% else %}
                                         —
                                     {% endif %}
                                 </td>
                                 <td class="border border-gray-300 p-3">
-                                    {% if upload.uploaded_by %}
-                                        {{ upload.uploaded_by.fname }} {{ upload.uploaded_by.lname }}
+                                    {% if assignment.created_by %}
+                                        {{ assignment.created_by.fname }} {{ assignment.created_by.lname }}
                                     {% else %}
                                         Anonymous
                                     {% endif %}
                                 </td>
-                                <td class="border border-gray-300 p-3">{{ upload.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                <td class="border border-gray-300 p-3">{{ assignment.created_at|date:"Y-m-d H:i" }}</td>
                                 <td class="border border-gray-300 p-3 text-center">
-                                    <a href="{{ upload.file.url }}" target="_blank" class="text-blue-600 hover:underline">Download</a>
+                                    {% if assignment.assignment_file %}
+                                    <a href="{{ assignment.assignment_file.url }}" target="_blank" class="text-blue-600 hover:underline">Download</a>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="9" class="border border-gray-300 p-3 text-center text-gray-500">No files uploaded yet</td>
+                                <td colspan="10" class="border border-gray-300 p-3 text-center text-gray-500">No assignments uploaded yet</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -151,17 +163,4 @@
             </div>
         {% endif %}
     </div>
-    <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    try {
-      flatpickr('#id_due_date', {
-        enableTime: false,
-        dateFormat: "d/m/Y",
-        allowInput: true
-      });
-    } catch (e) {
-      console.warn('flatpickr init failed', e);
-    }
-  });
-</script>
 {% endblock %}

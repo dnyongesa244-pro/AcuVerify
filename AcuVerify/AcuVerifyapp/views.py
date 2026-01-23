@@ -858,46 +858,56 @@ def parent_assignments(request):
 @login_required
 def my_upload(request):
     """
-    View for uploading files with a title.
-    Allows authenticated users to upload files.
+    View for uploading assignments.
+    Allows authenticated staff to upload assignments.
     """
     try:
         staff = Staff.objects.get(email=request.user.email)
     except Staff.DoesNotExist:
-        staff = None
         messages.error(request, 'You are not registered as a staff member.')
         return redirect('home')
 
     if request.method == 'POST':
-        form = MyUploadForm(request.POST, request.FILES)
+        form = AssignmentForm(request.POST, request.FILES)
         if form.is_valid():
-            upload = form.save(commit=False)
-            upload.uploaded_by = staff
-            upload.save()
-            messages.success(request, f'File "{upload.title}" uploaded successfully!')
-            return redirect('my_upload')
+            assignment = form.save(commit=False)
+            # Verify teacher teaches this subject/stream combination
+            if not teacher_can_teach(staff, assignment.subject_id.id, assignment.stream_id.id):
+                messages.error(request, 'You do not have permission to create assignments for this subject/stream combination.')
+                # Re-populate form fields if validation fails
+                teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
+                form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams).order_by('class_id__class_name', 'stream_name')
+                teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
+                form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects).order_by('subject_name')
+                return render(request, 'my_upload.html', {'form': form, 'uploads': Assignment.objects.filter(created_by=staff).order_by('-due_date', '-created_at')})
+            
+            assignment.created_by = staff
+            assignment.save()
+            messages.success(request, f'Assignment "{assignment.title}" posted successfully!')
+            return redirect('teacher_assignments') # Redirect to the teacher's assignment list
         else:
-            print("MyUploadForm is NOT valid. Errors:", form.errors) # Debugging line
+            print("AssignmentForm is NOT valid. Errors:", form.errors) # Debugging line
+            messages.error(request, 'Please correct the errors below.')
             # Repopulate querysets for streams and subjects on invalid POST
             teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
-            form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams)
+            form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams).order_by('class_id__class_name', 'stream_name')
             teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
-            form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects)
+            form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects).order_by('subject_name')
     else: # GET request
-        form = MyUploadForm()
+        form = AssignmentForm()
         # Filter to only streams the teacher teaches
         teacher_streams = StaffSubjectStream.objects.filter(staff_id=staff).values_list('stream_id', flat=True).distinct()
-        form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams)
+        form.fields['stream_id'].queryset = Streams.objects.filter(id__in=teacher_streams).order_by('class_id__class_name', 'stream_name')
         
         # Filter to only subjects the teacher teaches
         teacher_subjects = StaffSubjectStream.objects.filter(staff_id=staff).values_list('subject_id', flat=True).distinct()
-        form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects)
+        form.fields['subject_id'].queryset = Subject.objects.filter(id__in=teacher_subjects).order_by('subject_name')
     
-    # Get all uploaded files
-    uploads = MyUpload.objects.all() # Consider filtering by uploaded_by=staff if only showing teacher's uploads
+    # Get all assignments created by this teacher
+    uploads = Assignment.objects.filter(created_by=staff).order_by('-due_date', '-created_at')
     
     context = {
         'form': form,
-        'uploads': uploads,
+        'uploads': uploads, # Renamed from 'assignments' to 'uploads' to reuse template variable
     }
     return render(request, 'my_upload.html', context)
