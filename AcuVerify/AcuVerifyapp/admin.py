@@ -5,7 +5,7 @@ from django.template.response import TemplateResponse
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
-from .models import Staff, Subject, Classes, Students, Streams, Assignment, StudentAssignmentSubmission, StaffSubjectStream, MyUpload
+from .models import Staff, Subject, Classes, Students, Streams, Assignment, StudentAssignmentSubmission, StaffSubjectStream
 
 
 class BulkAssignClassForm(forms.Form):
@@ -130,4 +130,3 @@ admin.site.register(Streams)
 admin.site.register(Assignment, AssignmentAdmin)
 admin.site.register(StudentAssignmentSubmission, StudentAssignmentSubmissionAdmin)
 admin.site.register(StaffSubjectStream)
-admin.site.register(MyUpload)

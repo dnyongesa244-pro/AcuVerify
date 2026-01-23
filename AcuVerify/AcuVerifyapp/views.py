@@ -803,8 +803,8 @@ def student_assignment_detail(request, pk):
     
     # Get or create submission record
     submission, created = StudentAssignmentSubmission.objects.get_or_create(
-        assignment_id=assignment.id,
-        student_id=student.id
+        assignment_id=assignment,
+        student_id=student
     )
     
     if request.method == 'POST':
