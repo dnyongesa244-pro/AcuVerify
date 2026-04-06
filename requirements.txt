@@ -1,0 +1,18 @@
+# Core Framework
+django>=4.2,<5.0
+python-dotenv
+dj-database-url
+
+# Database (PostgreSQL)
+psycopg2-binary
+
+# PDF Generation
+reportlab
+
+# QR Code Generation
+segno
+
+# Frontend & Utilities
+django-bootstrap5
+whitenoise
+gunicorn
