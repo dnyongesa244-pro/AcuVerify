@@ -102,6 +102,9 @@
         <h3>Create Your Password</h3>
         <p>Email: <strong>{{ email }}</strong></p>
         <p>User Type: <strong>{{ user_type|title }}</strong></p>
+        <p>Username: <strong>{{ username }}</strong></p>
+        <p>Name: <strong>{{ first_name }} {{ last_name }}</strong></p>
+        <p class="help-text">Your username and name are taken from your {{ user_type }} record.</p>
         {% if messages %}
             {% for message in messages %}
                 <div class="error">{{ message }}</div>

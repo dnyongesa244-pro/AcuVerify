@@ -71,6 +71,44 @@ def teacher_can_teach(staff, subject_id, stream_id):
     ).exists()
 
 
+def make_unique_username(base):
+    """Build a unique Django username from a preferred base string."""
+    base = (base or '').strip().replace(' ', '').lower() or 'user'
+    # Django User.username max_length is 150
+    base = base[:140]
+    username = base
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base}{counter}"
+        counter += 1
+    return username
+
+
+def profile_for_create_password(request):
+    """
+    Resolve Staff or Students profile from the first-login session.
+    Returns (person, None) or (None, error_message).
+    """
+    user_type = request.session.get('user_type')
+    if user_type == 'staff':
+        staff_id = request.session.get('staff_id')
+        if not staff_id:
+            return None, 'Staff profile not found in session.'
+        try:
+            return Staff.objects.get(id=staff_id), None
+        except Staff.DoesNotExist:
+            return None, 'Staff profile not found.'
+    if user_type == 'student':
+        student_id = request.session.get('student_id')
+        if not student_id:
+            return None, 'Student profile not found in session.'
+        try:
+            return Students.objects.get(id=student_id), None
+        except Students.DoesNotExist:
+            return None, 'Student profile not found.'
+    return None, 'Unknown account type.'
+
+
 def home(request):
     """
     Home page view. Displays dashboard/landing page.
@@ -178,53 +216,67 @@ def login_user(request):
             'email': request.session.get('login_email')
         })
     
-    # Step 2b: New user (Staff/Student) - create password
+    # Step 2b: New user (Staff/Student) - create password and User from profile
     elif request.session.get('step') == 'create_password':
+        person, profile_error = profile_for_create_password(request)
+        if profile_error or person is None:
+            messages.error(request, profile_error or 'Profile not found.')
+            request.session.pop('login_email', None)
+            request.session.pop('step', None)
+            request.session.pop('user_type', None)
+            request.session.pop('staff_id', None)
+            request.session.pop('student_id', None)
+            return redirect('login')
+
+        user_type = request.session.get('user_type', 'user')
+        # Username from profile: admission number for students, email local-part for staff
+        if user_type == 'student':
+            preferred_username = person.admission_number
+        else:
+            preferred_username = (person.email or '').split('@')[0]
+
         if request.method == 'POST':
             create_password_form = CreatePasswordForm(request.POST)
             if create_password_form.is_valid():
                 email = request.session.get('login_email')
                 password = create_password_form.cleaned_data['password']
-                user_type = request.session.get('user_type')
-                
-                # Create User account
+
                 try:
-                    # Use email as username (or generate unique username if email already taken as username)
-                    username = email.split('@')[0]
-                    counter = 1
-                    while User.objects.filter(username=username).exists():
-                        username = f"{email.split('@')[0]}{counter}"
-                        counter += 1
-                    
+                    username = make_unique_username(preferred_username)
                     user = User.objects.create_user(
                         username=username,
                         email=email,
-                        password=password
+                        password=password,
+                        first_name=person.fname,
+                        last_name=person.lname,
                     )
-                    
-                    # Log in the user
+
                     auth_login(request, user)
-                    
-                    # Clear session
+
                     request.session.pop('login_email', None)
                     request.session.pop('step', None)
                     request.session.pop('user_type', None)
                     request.session.pop('staff_id', None)
                     request.session.pop('student_id', None)
-                    
-                    messages.success(request, f'Password created successfully! Welcome, {user_type.title()}!')
+
+                    messages.success(
+                        request,
+                        f'Password created successfully! Welcome, {person.fname} {person.lname}!'
+                    )
                     return redirect('home')
                 except Exception as e:
                     messages.error(request, f'Error creating account: {str(e)}')
         else:
             create_password_form = CreatePasswordForm()
-        
-        user_type = request.session.get('user_type', 'user')
+
         return render(request, 'login.html', {
             'form': create_password_form,
             'step': 'create_password',
             'email': request.session.get('login_email'),
-            'user_type': user_type
+            'user_type': user_type,
+            'first_name': person.fname,
+            'last_name': person.lname,
+            'username': preferred_username or make_unique_username(preferred_username),
         })
     
     # Default: reset to email step
